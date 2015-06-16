@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Louie Portfolio</title>
+	<link rel="stylesheet" href="css/main.css">
+	<link rel="stylesheet" href="css/grid.css">
+
+	<link href='http://fonts.googleapis.com/css?family=Orbitron:400,500,700,900' rel='stylesheet' type='text/css'>
+	<link href='http://fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+	<link href='http://fonts.googleapis.com/css?family=Roboto:400,100,100italic,300,300italic,400italic,500,500italic,700,700italic,900,900italic' rel='stylesheet' type='text/css'>
+</head>
+
+<body>
+	<div id="bg"></div>
+	<div class="nav-top-upper"></div>
+	<div class="grid" id="topNav">
+		<div class="nav-top">
+			<nav>
+				<a href="index.html"><img src="img/logo.png" alt="Logo"></a>
+				<span>/</span>
+				<a class="nav-text" href="index.html">HOME</a>
+				<span>/</span>
+				<a class="nav-text" href="01_about.html">ABOUT</a>
+				<span>/</span>
+				<a class="nav-text" href="02_projects.html">PROJECTS</a>
+				<span>/</span>
+				<a class="nav-text" href="index.html#footer">CONTACT</a>
+			</nav>
+		</div>
+	</div>
+	<div class="nav-top-bottom"></div>
+
+
+	<div class="grid" id="content">
+		<div class="col-8of12">
+			<div class="col-2of8" id="tab-title">
+				<h2>PROJECT</h2>
+			</div>
+			<div class="col-2of8" id="phase">
+				<nav class="phase"> 
+					<a href="#section02"><h3>Early</h3></a>
+					<a href="#section03"><h3>Alpha</h3></a>
+					<a href="#section04"><h3>Beta</h3></a>
+				</nav>
+			</div>
+			
+			<div class="col-6of8 content-box" id="detail">
+				<div class="project-title">
+					<h1>NAUTICAL CATS</h1>
+					<h2>Unity Game Development</h2>
+				</div>
+				
+				<div class="col-1of6">
+					<div class="info-group">
+						<div class="info-title">
+							<h4>Role</h4>
+						</div>
+					</div>
+				</div>
+				<div class="col-5of6">
+					<div class="info-group">
+						<p>Gameplay Programming, Game Test & Evaluation, Game Balance Evaluation</p>
+					</div>
+				</div>
+
+				<div class="col-1of6">
+					<div class="info-group">
+						<div class="info-title">
+							<h4>Tools</h4>
+						</div>
+					</div>
+				</div>
+				<div class="col-1of6">
+					<div class="info-group">
+						<p>Unity, C#, Javascript</p>
+					</div>
+				</div>
+				
+
+				<div class="col-1of6">
+					<div class="info-group">
+						<div class="info-title">
+							<h4>Team</h4>
+						</div>
+					</div>
+				</div>
+				<div class="col-1of6">
+					<div class="info-group">
+						<p>4</p>
+					</div>
+				</div>
+
+				<div class="col-1of6">
+					<div class="info-group">
+						<div class="info-title">
+							<h4>Client</h4>
+						</div>
+					</div>
+				</div>
+				<div class="col-1of6">
+					<div class="info-group">
+						<p>Academic Project</p>
+					</div>
+				</div>
+				
+
+				<div class="col-1of1 project-section" id="section00">
+					<div class="project-subtitle">
+						<h3>Game Trailer & Link</h3>
+					</div>
+					<div class="col-1of1" id="trailerVideo">
+						<iframe src="https://player.vimeo.com/video/113327899" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe> 
+					</div>
+					<div class="col-1of1" id="gamelink">
+						<a href="http://www.sfu.ca/~louieyel/IAT%20410/Final/web_out/web_out.html" target="_blank">
+							<h2>Try Out the GAME</h2>
+							<span>&#8640;</span>
+						</a>
+					</div>
+				</div>
+
+				<div class="col-1of1 project-section" id="section01">
+					<div class="project-subtitle">
+						<h3>Overview</h3>
+					</div>
+
+
+					<p>Nautical Cats is a 2D platformer player versus player (PVP) capture the fish game. The essential idea behind the game is for players to collect Fish and have more Fish in the chest than their opponents before the time runs out.</p>
+					<p>In the team, I was responsible for the implementation of the entire game from prototyping, alpha to beta. Collaborating and communication with other team members who handled game mechanisms, art design and level design, I put all elements into Unity and combined them into the actual game.</p>
+				</div>
+
+				<div class="col-1of1 project-section" id="section02">
+					<div class="project-subtitle">
+						<h3>Early Stage: Prototyping</h3>
+					</div>
+					
+					<div class="col-3of6">
+						<p>In the early stage, when the team came up the brief game idea and potential core game mechanism, I have made an early prototype for the team to have a better vision of the scope of the our final product. This prototype contained a controllable character created using 2D Rigidbody and random character image. The character has some general movements such as walking and jumping. I have also added attack which can one-shot dummy character to provide a foundation for the later implementation.</p>
+					</div>
+					<div class="col-3of6">
+						<img src="img/projects/project01_img001.jpg" alt="game pic">
+					</div>
+				</div>
+
+				<div class="col-1of1 project-section" id="section03">
+					<div class="project-subtitle">
+						<h3>Alpha</h3>
+					</div>
+					<div class="col-3of6">
+						<p>The first prototype, Alpha, had all core game mechanisms, including basic character movements, combat system, interaction with fish and chest, and winning condition. In addition, we included two different characters which inherits from same character class to test game balance. For the game graphic, besides the characters and map, We also have score display. With the alpha, we were able to conduct user tests. From the feedback, we realized the issue in game balance (attack damage &amp; jump height) and visual feedback such as unclear animation.</p>
+					</div>
+					<div class="col-3of6">
+					<img src="img/projects/project01_img002.jpg" alt="game pic">
+					</div>
+				</div>
+				
+				<div class="col-1of1 project-section" id="section04">
+					<div class="project-subtitle">
+						<h3>Beta</h3>
+					</div>
+					<p>For our Beta version, we have polished visual elements (sprites &amp; animations), improved game balance based on the user tests, and fixed bugs. In addition, we added two more playable characters and two more maps. For each map, we also included more dynamic map interactions and effects such as temporarily disappearing platforms and falling objects that damage players in order to give more variety and depth in our game. Finally, we completed the game with UI screens including home menu, character selection and loading.  And very last, I was able to connect four game pads for a better game inputs.</p>
+
+					<div class="col-3of6">
+						<img src="img/projects/project01_img003.PNG" alt="game pic">
+					</div>
+					<div class="col-3of6">
+						<img src="img/projects/project01_img004.PNG" alt="game pic">
+					</div>
+					<div class="col-3of6">
+						<img src="img/projects/project01_img005.PNG" alt="game pic">
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	
+	<div class="grid">
+		<div class="col-12of12" id="footer">
+			<h6>Designed by Louie ye Liu</h6>
+		</div>
+	</div>
+
+</body>
+
+</html>

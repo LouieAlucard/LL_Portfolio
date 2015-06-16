@@ -1,0 +1,196 @@
+/* Grid Stylesheet*/
+
+*, *::after, *::before {
+	-webkit-box-sizing: border-box;
+	-moz-box-sizing: border-box;
+	box-sizing: border-box;
+}
+
+[class^='col-'] {
+	float: left;
+	padding: 0;
+	text-align: center;
+}
+
+.grid {
+	content: "";
+	display: block;
+	clear: both;
+}
+
+.col-1of1 {
+	width: 100%;
+}
+
+.col-6of12 {
+	width: 50%;
+	margin-left: 25%;
+}
+
+.col-7of12 {
+	width: 58.33%;
+	margin-left: 20.83%;
+}
+
+.col-8of12 {
+	width: 66.6%;
+	margin-left: 16.6%;
+}
+
+.col-12of12 {
+	width: 100%;
+}
+
+.col-2of8 {
+	width: 25%;
+}
+
+.col-4of8 {
+	width: 50%;
+}
+
+.col-6of8 {
+	width: 75%;
+}
+
+.col-7of8 {
+	width: 87.5%;
+}
+
+.col-1of6 {
+	width: 16.6%
+}
+
+.col-2of6 {
+	width: 33.3%
+}
+
+.col-3of6 {
+	width: 50%
+}
+
+.col-4of6 {
+	width: 66.6%
+}
+
+.col-5of6 {
+	width: 83.3%;
+}
+
+
+@media (max-width: 1300px) {
+	.col-3of6 {
+		width: 100%;
+	}
+}
+
+@media (max-width: 850px) {
+
+	/* home */
+	.col-6of12 {
+		width: 83.3%;
+		margin-left: 8.33%;
+	}
+
+	.col-8of12 {
+		width: 83.3%;
+		margin-left: 8.33%;
+	}
+	
+	.col-4of8 {
+		width: 100%;
+	}
+
+	#welcome #name {
+		padding: 0.4rem;
+	}
+
+	#welcome #name h2 {
+		font-size: 0.8rem;
+	}
+
+	.module-title {
+		width: 98.5%;
+	}
+
+	#about {
+		margin-left: 0;
+		width: 100%;
+	}
+
+	#phase {
+		width: 100%;
+	}
+
+	nav.phase {
+		text-align: left;
+	}
+
+	nav.phase a {
+		width: 25%;
+		display: inline-block;
+		padding: 2% 5% 2% 2%;
+		margin: 2.5% 2.5% 5% 0;
+	}
+
+	#detail {
+		width: 100%;
+	}
+
+	.col-1of6#rp {
+		width: 100%;
+	}
+
+	#trailerVideo iframe {
+	  	height: 300px;
+	}
+
+
+
+}
+
+
+@media (max-width: 550px) {
+
+	#welcome #name {
+		width: 35%;
+	}
+
+	.module-content {
+		padding-top: 7.5%;
+	}
+
+	.module-content h1 {
+  		font-size: 1.4rem;
+	}
+
+	.module-content h2 {
+  		font-size: 0.7rem;
+	}
+
+	.module-title {
+		font-size: 0.6rem;
+	}
+
+	.skill {
+		width: 100%;
+	  	display: block;
+	}
+
+	nav.phase a h3 {
+		font-size: 0.9rem;
+	}
+
+	.col-1of6 {
+		width: 100%;
+	}
+
+	p {
+		font-size: 0.9rem;
+	}
+
+	#trailerVideo iframe {
+	  	height: 200px;
+	}
+
+}
