@@ -30,7 +30,7 @@
 <body>
 <div class="wrapper">
 
-	<?php include("header.html"); ?>
+	<!--#include file="include_head.html" -->
 
 	<div id="homeBanner">
 		<div id="bannerSkin"></div>
