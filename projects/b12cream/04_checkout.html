@@ -1,0 +1,1917 @@
+<%@ Page Language="VB" %>
+<!DOCTYPE html>
+<%@ Import Namespace = "System.Data.SqlClient" %>
+<%@ Import Namespace = "System.Net" %>
+<%@ Import Namespace = "System.IO" %>
+<%@ Import Namespace="System.Net.Mail" %>
+<%@ Import Namespace = "WODCRYPTCOMLib" %>
+
+<!--#include file="/conn/conn.aspx"-->
+<script language="VB" runat="server">
+
+	Public FreeShippingAmount = 99
+	Public FreeShippingAmountInt = 199
+    'Public InCDN As Integer = 0'
+	Public ThePrice(1) As Single
+    Public TheDesc(1) As String
+    Public TheID(1) As String
+    Public TheQuantity(1) As String
+	
+    Public TheOrderTotal, TheTotalPST, TheTotalPSTC,TheTotalGST,TheTotalGSTC,TheShippingTotal, TheTranAmount, OrigAmount, TheActualShipCost, TheActualShipCostC As Single
+	Public TheChangeCurr As Single = 1
+	Public TheCreditUsed, TheCreditUsedC As Single
+	Public TheShippingDesc, TheTransactionID, ThePassword, CurrencyCode As String
+	Public TheShippingCode As Integer = 0
+    Public NumRows As Integer
+    Public III As Integer
+    Public TheError As String = ""
+    Public TheTemp As String = ""
+	Public Theaspx As String = ""
+ 	Public TheItemsaspx As String = ""
+    Public Subtotal, SubtotalC, TotalCOGS, TotalCOGSC, TotalCredit As Single
+    Public ReferredBy, TheUserState,ShipFName, ShipLName, ShipEmail, ShipAddress, ShipCity, ShipState, ShipCountry, ShipZip, ShipPhone, ShipFax, CCardName, CCardNumber, CCardType, CCardExpiry, CCardCVV As String
+    Public TheBillFirst, TheBillLast, TheBillAddress, TheBillCity, TheBillState, TheBillCountry, TheBillZip, TheBillPhone, TheBillFax, TheCreditCardType, TheCreditCardNumber, TheCreditCardName, TheCreditCardCVV, TheTempCardExpiry As String
+	Public trnApproved,trnMessageText,trnMessageID,trnAuthCode,trnResponse,trnRequest, trnID, trnAVS As String
+	Public OrdersPlaced, IsPaid As Integer
+	Public DiscountApplied As Boolean = False
+	Public AffiliateGood As Boolean = False
+	Public DeleteCoupon As Boolean = False
+	Public CouponID As Integer = 0
+	Public VIPApplied As Boolean = False
+	Public TheCurrency = " USD"
+
+	Protected Overrides Sub OnError(ByVal e as System.EventArgs) 
+		Response.Redirect("http://www.b12cream.com/index.aspx")
+	End Sub
+
+
+	Protected Function EncryptStr(ByVal thestr As String) As String
+
+		Dim Crypt As New wodCryptCom
+		Dim EncBlob As New MemBlob
+		Dim DecBlob As New MemBlob
+
+		DecBlob.Text = thestr
+		Crypt.Optimized = False
+		Crypt.LicenseKey = "5TG3-Q26S-248J-2ADW"
+		Crypt.SecretKey = "d5h8lu7peoiei4ou5kiyr7jr8n5o86n56nd7h7caxhdsa8oqwelnkhc"
+		Crypt.Type = 4
+
+		Crypt.Encrypt(DecBlob, EncBlob)
+
+		DecBlob = Nothing
+		Crypt = Nothing
+
+		Return EncBlob.ToHex
+	End Function
+
+
+	Protected Function DecryptStr(ByVal thestr As String) As String
+
+		Dim Crypt As New wodCryptCom
+		Dim EncBlob As New MemBlob
+		Dim DecBlob As New MemBlob
+
+		EncBlob.FromHex(thestr)
+		Crypt.Optimized = False
+		Crypt.LicenseKey = "5TG3-Q26S-248J-2ADW"
+		Crypt.SecretKey = "d5h8lu7peoiei4ou5kiyr7jr8n5o86n56nd7h7caxhdsa8oqwelnkhc"
+		Crypt.Type = 4
+
+		Crypt.Decrypt(EncBlob, DecBlob)
+		EncBlob = Nothing
+		Crypt = Nothing
+
+		Return Replace(DecBlob.Text,Chr(0),"")
+	End Function
+
+
+    Protected Function SqlEnc(ByVal a As String) As String
+        Dim TempS As String = ""
+		
+        If Not a Is DBNull.Value Then
+            TempS = Trim(Replace(a, "'", "''"))
+            TempS = Replace(TempS, vbCrLf, "")
+        End If
+        Return TempS
+    End Function
+
+
+	Protected Function GetValue(ByVal thestr As String,ByVal key As String) As String
+
+		Dim response_array As Array = Split(thestr,"&")
+
+		Dim RetVal 
+		Dim Found As Boolean = False
+		For each thing in response_array
+			If InStr(thing,key) > 0 Then
+				RetVal = Split(thing,"=")
+				Return RetVal(1)
+				Found = True
+			End If
+		Next
+
+			If NOT Found then
+				Return ""
+			End If
+	End Function
+
+
+	Function GetFileContents(ByVal FullPath As String, Optional ByRef ErrInfo As String = "") As String
+        Dim strContents As String
+        Dim objReader As System.IO.StreamReader
+     	'Try
+            objReader = New System.IO.StreamReader(FullPath)
+            strContents = objReader.ReadToEnd()
+            objReader.Close()
+            Return strContents
+        'Catch Ex As Exception
+			'ErrInfo = Ex.Message
+        'End Try
+	End Function
+	
+
+  	Protected Sub CheckCCType(ByVal sender As Object, ByVal e As System.EventArgs)
+	
+		If CreditCardType.SelectedValue = "PayPal" Then
+		
+			CC1.Visible = False
+			CC2.Visible = False
+			CC3.Visible = False
+			CC4.Visible = False
+			'CC5.Visible = False
+		Else
+			CC1.Visible = True
+			CC2.Visible = True
+			CC3.Visible = True
+			CC4.Visible = True		
+			'CC5.Visible = True		
+		End If	
+	End Sub
+	
+
+	Protected Function ChargeCreditCard() As String
+
+       	Dim TempCountry As String = ""
+	    Dim TheShipType, TSql, MerchantAcct As String
+		Dim TheShipPrice, TheShipPriceC, TheTotalPaid, TheTotalPaidC, TheGrandTotal, TheGrandTotalC, TheCreditUsed, TheCreditUsedC As Single
+ 		Dim TheCreditCardExpiry(2) As String
+		Dim UpdateCard As Boolean = False
+        Dim conn As New SqlConnection(ConnString)
+        Dim dr As SqlDataReader
+        Dim sql As New SqlCommand
+ 
+		conn.Open()
+ 		TheShipType = ShipType.Text
+	
+     	sql = New SqlCommand("SELECT SUM([Tempitem].[CostPrice] * [Tempitem].[Quantity]) AS TotalCOGS,SUM([Tempitem].[CostPriceC] * [Tempitem].[Quantity]) AS TotalCOGSC, SUM([Tempitem].[Price] * [Tempitem].[Quantity]) AS Subtotal,SUM([Tempitem].[PriceC] * [Tempitem].[Quantity]) AS SubtotalC,SUM(PST) AS TotalPST, SUM(PSTC) AS TotalPSTC, SUM(GST) AS TotalGST, SUM(GSTC) AS TotalGSTC FROM [Tempitem] WHERE OrderID = " & Session("OrderID"), conn)
+        dr = sql.ExecuteReader()
+        If dr.Read Then
+            Subtotal = Math.Round(dr("Subtotal"), 2)
+            SubtotalC = Math.Round(dr("SubtotalC"), 2)
+            TotalCOGS = Math.Round(dr("TotalCOGS"), 2)
+            TotalCOGSC = Math.Round(dr("TotalCOGSC"), 2)
+    		TheTotalPST = Math.Round(dr("TotalPST"),2)
+		    TheTotalGST = Math.Round(dr("TotalGST"),2)
+		    TheTotalPSTC = Math.Round(dr("TotalPSTC"),2)
+		    TheTotalGSTC = Math.Round(dr("TotalGSTC"),2)
+		End If
+        dr.Close()
+				
+        If Session("InCAD") = 0 Then 
+            TheShipPrice = TheShippingTotal
+            TheShipPriceC = Math.Round(TheShippingTotal / Session("ExchangeCADUSD"), 2)
+			If UserCountry.Text <> "CA" Then
+	            TheTotalPaid = TheOrderTotal + TheShippingTotal
+    	        TheTotalPaidC = Math.Round((TheOrderTotal + TheShippingTotal) / Session("ExchangeCADUSD"), 2)
+        	    TheGrandTotal = TheOrderTotal + TheShippingTotal
+            	TheGrandTotalC = Math.Round((TheOrderTotal + TheShippingTotal) / Session("ExchangeCADUSD"), 2)
+			Else
+	            
+				TheTotalPaid = TheOrderTotal + TheShippingTotal + TheTotalGST + TheTotalPST
+    	        TheTotalPaidC = Math.Round((TheOrderTotal + TheShippingTotal + TheTotalPST + TheTotalGST) / Session("ExchangeCADUSD"), 2)
+        	    TheGrandTotal = TheOrderTotal + TheShippingTotal + TheTotalGST + TheTotalPST
+            	TheGrandTotalC = Math.Round((TheOrderTotal + TheShippingTotal + TheTotalGST + TheTotalPST) / Session("ExchangeCADUSD"), 2)
+			End If
+			
+            TheCreditUsed = 0
+            TheCreditUsedC = 0
+			
+        Else
+            TheShipPriceC = TheShippingTotal
+            TheShipPrice = Math.Round(TheShippingTotal * Session("ExchangeCADUSD"), 2)
+			If UserCountry.Text <> "CA" Then
+ 	            TheTotalPaidC = TheOrderTotal + TheShippingTotal
+    	        TheTotalPaid = Math.Round(((TheOrderTotal+TheShippingTotal) * Session("ExchangeCADUSD")), 2)
+        	    TheGrandTotalC = TheOrderTotal + TheShippingTotal
+            	TheGrandTotal = Math.Round(((TheOrderTotal+TheShippingTotal) * Session("ExchangeCADUSD")), 2)
+			Else
+ 	            TheTotalPaidC = TheOrderTotal + TheTotalGSTC + TheTotalPSTC + TheShippingTotal
+    	        TheTotalPaid = Math.Round(((TheOrderTotal+TheShippingTotal) * Session("ExchangeCADUSD")) + TheTotalPST + TheTotalGST, 2)
+        	    TheGrandTotalC = TheOrderTotal + TheTotalGSTC + TheTotalPSTC + TheShippingTotal
+
+            	TheGrandTotal = Math.Round(((TheOrderTotal+TheShippingTotal) * Session("ExchangeCADUSD")) + TheTotalPST + TheTotalGST, 2)
+			End If
+            TheCreditUsed = 0
+            TheCreditUsedC = 0
+        End If
+        TSql = "Update Temporder SET ShipFName=N'" & SqlEnc(UserFirst.Text) & "',ShipLName=N'" & SqlEnc(UserLast.Text) & "',ShipAddress=N'" & SqlEnc(UserAddress.Text) & "',ShipCity=N'" & SqlEnc(UserCity.Text) & "',ShipZip='" & SqlEnc(UserZip.Text) & "',ShipPhone='" & SqlEnc(UserPhone.Text) & "',ShipEmail='" & SqlEnc(UserEmail.Text) & "',ShipCountry='" & SqlEnc(UserCountry.Text) & "'"
+
+        If UserFax.Text <> "" Then
+            TSql = TSql & ",ShipFax='" & SqlEnc(UserFax.Text) & "'"
+        End If
+
+        TSql = TSql & ",ShipState='" & SqlEnc(UserState.Text) & "'"
+
+        If BillSame.Checked Then
+		
+            TSql = TSql & ",BillFName='" & SqlEnc(UserFirst.Text) & "',BillLName='" & SqlEnc(UserLast.Text) & "',BillAddress='" & SqlEnc(UserAddress.Text) & "',BillCity=N'" & SqlEnc(UserCity.Text) & "',BillCountry='" & SqlEnc(UserCountry.Text) & "',BillZip='" & SqlEnc(UserZip.Text) & "',BillPhone='" & SqlEnc(UserPhone.Text) & "'"
+            If UserFax.Text <> "" Then TSql = TSql & ",BillFax='" & SqlEnc(UserFax.Text) & "'"
+            
+			TheBillFirst = UserFirst.Text
+			TheBillLast = UserLast.Text
+			TheBillAddress = UserAddress.Text
+			TheBillCity = UserCity.Text
+			TheBillCountry = UserCountry.Text
+			TheBillZip = UserZip.Text
+			TheBillPhone = UserPhone.Text
+			TheBillFax = UserFax.Text
+			
+            TSql = TSql & ",BillState='" & SqlEnc(UserState.SelectedItem.Value) & "'"
+			TheBillState = UserState.SelectedItem.Value
+		
+        Else
+			'If UserCountry.Text = "CN" OR UserCountry.Text = "HK" Then
+				'TempCountry = BillCountryAlt.SelectedItem.Value
+			'Else
+				TempCountry = BillCountry.Text
+			'End If
+			
+            TSql = TSql & ",BillFName=N'" & SqlEnc(BillFirst.Text) & "',BillLName=N'" & SqlEnc(BillLast.Text) & "',BillAddress=N'" & SqlEnc(BillAddress.Text) & "',BillCity=N'" & SqlEnc(BillCity.Text) & "',BillCountry='" & SqlEnc(TempCountry) & "',BillZip='" & SqlEnc(BillZip.Text) & "',BillPhone='" & SqlEnc(BillPhone.Text) & "'"
+            If BillFax.Text <> "" Then TSql = TSql & ",BillFax='" & SqlEnc(BillFax.Text) & "'"
+
+			TheBillFirst = BillFirst.Text
+			TheBillLast = BillLast.Text
+			TheBillAddress = BillAddress.Text
+			TheBillCity = BillCity.Text
+			TheBillCountry = TempCountry
+			TheBillZip = BillZip.Text
+			TheBillPhone = BillPhone.Text
+			TheBillFax = BillFax.Text
+
+            TSql = TSql & ",BillState='" & SqlEnc(BillState.SelectedItem.Value) & "'"
+			TheBillState = BillState.SelectedItem.Value
+		
+        End If
+ 	
+		'If OldCard.Visible And CreditCardType.SelectedItem.Value ="Choose Type"  Then
+			'sql = New SqlCommand("SELECT CCardType,CCardName,CCardNumber,CCardExpiry,CCardCVV FROM Clients WHERE ClientID=" & Session("ClientID"), conn)
+			'dr = sql.ExecuteReader()
+			'If dr.Read Then
+				'If NOT IsDBNull(dr("CCardName")) Then
+					'TSql = TSql & ",CCardType='" & SqlEnc(dr("CCardType")) & "'"
+					'TSql = TSql & ",CCardName='" & SqlEnc(dr("CCardName")) & "'"
+					'TSql = TSql & ",CCardNumber='" & dr("CCardNumber") & "'"
+					'TSql = TSql & ",CCardExpiry='" & SqlEnc(dr("CCardExpiry")) & "'"
+					'If NOT IsDBNull(dr("CCardCVV")) Then
+						'TSql = TSql & ",CCardCVV='" & SqlEnc(dr("CCardCVV")) & "'"
+						'TheCreditCardCVV = dr("CCardCVV")
+					'Else
+						'TheCreditCardCVV = ""
+					'End If
+					'TheCreditCardType = dr("CCardType")
+					'TheCreditCardNumber = DecryptStr(dr("CCardNumber"))
+					'TheCreditCardName = dr("CCardName")
+					'TheTempCardExpiry = dr("CCardExpiry")
+					'TheCreditCardExpiry = TheTempCardExpiry.split("/")
+				'End If
+			'End If
+			'dr.Close
+			
+    	'Else
+            TSql = TSql & ",CCardType='" & SqlEnc(CreditCardType.SelectedItem.Value) & "'"
+            TSql = TSql & ",CCardName='" & SqlEnc(CreditCardName.Text) & "'"
+            TSql = TSql & ",CCardNumber='" & EncryptStr(CreditCardNumber.Text) & "'"
+            TSql = TSql & ",CCardExpiry='" & SqlEnc(CreditCardExpMonth.SelectedItem.Value  & "/" & CreditCardExpYear.SelectedItem.Value)  & "'"
+            TSql = TSql & ",CCardCVV='" & SqlEnc(CreditCardCVV.Text) & "'"
+            UpdateCard = True
+			TheCreditCardType = CreditCardType.SelectedItem.Value
+			TheCreditCardNumber = CreditCardNumber.Text
+			TheCreditCardName = CreditCardName.Text
+			TheTempCardExpiry = CreditCardExpMonth.SelectedItem.Value  & "/" & CreditCardExpYear.SelectedItem.Value
+			TheCreditCardExpiry = TheTempCardExpiry.split("/")			
+			TheCreditCardCVV = CreditCardCVV.Text
+		'End If
+		TSql = TSql & ",[Date]='" & Now & "'"
+        TSql = TSql & ",ShipType='" & SqlEnc(TheShipType) & "'"
+        TSql = TSql & ",ShipPrice=" & TheShipPrice
+        TSql = TSql & ",ShipPriceC=" & TheShipPriceC
+        TSql = TSql & ",CreditUsed=" & TheCreditUsed
+        TSql = TSql & ",CreditUsedC=" & TheCreditUsedC
+        TSql = TSql & ",TotalPaid=" & TheTotalPaid
+        TSql = TSql & ",TotalPaidC=" & TheTotalPaidC
+		'If Session("CountryCode") = "CA" Then
+	        TSql = TSql & ",GST=" & TheTotalGST
+	        TSql = TSql & ",GSTC=" & TheTotalGSTC
+	        TSql = TSql & ",PST=" & TheTotalPST
+	        TSql = TSql & ",PSTC=" & TheTotalPSTC
+		'End If
+        TSql = TSql & ",Grandtotal=" & TheGrandTotal
+        TSql = TSql & ",GrandtotalC=" & TheGrandTotalC
+        TSql = TSql & " WHERE OrderID=" & Session("OrderID")
+
+		'conn.Open()
+        sql = New SqlCommand(TSql, conn)
+        sql.ExecuteNonQuery()
+
+		''begin beanstream charge
+
+		IsPaid = 0
+
+		'Session("InCDN") = 0
+		'If TheCreditCardType = "PayPal" Then
+			'conn.Close
+			'conn = nothing
+			'Response.Redirect("/checkoutpaypal.aspx")
+		'End If
+
+
+		If (TheCreditCardType = "Visa" OR TheCreditCardType = "MasterCard") AND 1=2  Then
+
+
+			If Session("InCAD") = 1 Then
+				TheTranAmount = Math.Round(TheGrandTotalC,2)
+				OrigAmount = Math.Round(TheGrandTotal,2)
+				CurrencyCode = "CAD"
+			 	'MerchantAcct = "201730000"
+				'Session("InCDN") = 1
+			Else
+				'If CreditCardType.SelectedItem.Value = "AmEx" AND TheBillCountry = "US" Then 
+					'TheTranAmount = Math.Round(TheGrandTotalC,2)
+					'OrigAmount = Math.Round(TheGrandTotal,2)
+					'MerchantAcct = "201730000"	
+					'Session("InCDN") = 1
+				'Else
+					'MerchantAcct = "201740000"
+					TheTranAmount = Math.Round(TheGrandTotal,2)
+					OrigAmount = Math.Round(TheGrandTotalC,2)
+					CurrencyCode = "USD"
+				'End If
+			End If
+
+			'If TheBillCountry <> "CA" Then
+				'If CreditCardType.SelectedItem.Value = "AmEx" AND TheBillCountry = "US" Then 
+					'TheTranAmount = Math.Round(TheGrandTotalC,2)
+					'OrigAmount = Math.Round(TheGrandTotal,2)
+					'MerchantAcct = "201730000"	
+					'Session("InCDN") = 1
+				'Else
+					'MerchantAcct = "201740000"
+					'TheTranAmount = Math.Round(TheGrandTotal,2)
+					'OrigAmount = Math.Round(TheGrandTotalC,2)
+				'End If
+			'Else
+				'TheTranAmount = Math.Round(TheGrandTotalC,2)
+				'OrigAmount = Math.Round(TheGrandTotal,2)
+				'MerchantAcct = "201730000"
+				'Session("InCDN") = 1
+			'End If
+
+			If Session("InCAD") = 1 Then
+
+			 	If Len(TheBillAddress) > 59 Then 
+
+					trnRequest = "x_method=CC&x_delim_data=TRUE&x_delim_char=|&x_relay_response=FALSE&x_currency_code=" & CurrencyCode & "&x_type=AUTH_CAPTURE&x_login=9GE77eAtH&x_tran_key=2xy27ugu77WRDK36&x_card_num=" & TheCreditCardNumber & "&x_exp_date=" & TheCreditCardExpiry(0) & TheCreditCardExpiry(1) & "&x_invoice_num=O" & Session("OrderID") & "&x_card_code=" & TheCreditCardCVV & "&x_amount=" & TheTranAmount & "&x_first_name=" & TheBillFirst & "&x_last_name=" & TheBillLast & "&x_address=" & TheBillAddress & "&x_state=" & TheBillState & "&x_zip=" & TheBillZip 
+
+
+			 	Else
+					trnRequest = "x_method=CC&x_delim_data=TRUE&x_delim_char=|&x_relay_response=FALSE&x_currency_code=" & CurrencyCode & "&x_type=AUTH_CAPTURE&x_login=9GE77eAtH&x_tran_key=2xy27ugu77WRDK36&x_card_num=" & TheCreditCardNumber & "&x_exp_date=" & TheCreditCardExpiry(0) & TheCreditCardExpiry(1) & "&x_invoice_num=O" & Session("OrderID") & "&x_card_code=" & TheCreditCardCVV & "&x_amount=" & TheTranAmount & "&x_first_name=" & TheBillFirst & "&x_last_name=" & TheBillLast & "&x_address=" &  Strings.Left(TheBillAddress,59) & "&x_state=" & TheBillState & "&x_zip=" & TheBillZip 
+
+
+			 	End If
+
+			Else
+
+			 	If Len(TheBillAddress) > 59 Then 
+
+					trnRequest = "x_method=CC&x_delim_data=TRUE&x_delim_char=|&x_relay_response=FALSE&x_currency_code=" & CurrencyCode & "&x_type=AUTH_CAPTURE&x_login=6aBs3w4A8q&x_tran_key=8zjJ5tcU865hqH77&x_card_num=" & TheCreditCardNumber & "&x_exp_date=" & TheCreditCardExpiry(0) & TheCreditCardExpiry(1) & "&x_invoice_num=O" & Session("OrderID") & "&x_card_code=" & TheCreditCardCVV & "&x_amount=" & TheTranAmount & "&x_first_name=" & TheBillFirst & "&x_last_name=" & TheBillLast & "&x_address=" & TheBillAddress & "&x_state=" & TheBillState & "&x_zip=" & TheBillZip 
+
+
+			 	Else
+					trnRequest = "x_method=CC&x_delim_data=TRUE&x_delim_char=|&x_relay_response=FALSE&x_currency_code=" & CurrencyCode & "&x_type=AUTH_CAPTURE&x_login=6aBs3w4A8q&x_tran_key=8zjJ5tcU865hqH77&x_card_num=" & TheCreditCardNumber & "&x_exp_date=" & TheCreditCardExpiry(0) & TheCreditCardExpiry(1) & "&x_invoice_num=O" & Session("OrderID") & "&x_card_code=" & TheCreditCardCVV & "&x_amount=" & TheTranAmount & "&x_first_name=" & TheBillFirst & "&x_last_name=" & TheBillLast & "&x_address=" &  Strings.Left(TheBillAddress,59) & "&x_state=" & TheBillState & "&x_zip=" & TheBillZip 
+
+
+		 		End If
+
+			End If
+
+			Dim objRequest As HttpWebRequest = CType(WebRequest.Create("https://secure.authorize.net/gateway/transact.dll"), HttpWebRequest)
+			objRequest.Method = "POST"
+			objRequest.ContentLength = trnRequest.Length
+			objRequest.ContentType = "application/x-www-form-urlencoded"
+
+			Dim myWriter As StreamWriter = Nothing
+			myWriter = New StreamWriter(objRequest.GetRequestStream())
+			myWriter.Write(trnRequest)
+			myWriter.Close()
+
+			Dim objResponse As HttpWebResponse = CType(objRequest.GetResponse(), HttpWebResponse)
+			Dim responseStream As New StreamReader(objResponse.GetResponseStream())
+			Dim post_response As String = responseStream.ReadToEnd()
+			responseStream.Close()
+
+
+			'TSql = "INSERT INTO BeanstreamXML (Request,Response,FirstName,LastName) VALUES ('" & SqlEnc(trnRequest) & "','" & SqlEnc(trnResponse) & "','" & SqlEnc(TheBillFirst) & "','" & SqlEnc(TheBillLast) & "')"
+			'Response.Write(TSql)
+			'Response.End()
+			'sql = New SqlCommand(TSql, conn)
+			'sql.ExecuteNonQuery()
+
+			Dim response_array As Array = Split(post_response,"|", -1)
+
+			trnApproved = response_array(0)
+			trnMessageText = response_array(3)
+			trnID = response_array(6)
+			trnAuthCode = response_array(4)
+			trnAVS = response_array(5)
+
+
+			If trnApproved = "1" Then
+				TSql = "Update TempOrder SET AuthCode = '" & SqlEnc(trnAuthCode) & "',TransactionID = '" & SqlEnc(trnID) & "' WHERE OrderID="  & Session("OrderID")
+			    sql = New SqlCommand(TSql, conn)
+			    sql.ExecuteNonQuery()
+				IsPaid = 1
+				'If ChangeCurr <> 1 Then 	
+					'If CreditCardType.SelectedItem.Value = "AmEx" AND TheBillCountry = "US" Then
+					'TSql = "INSERT INTO CCTrans ([Approved],[Type],[Response],[OrderID],[ClientID],[Date],[CCardType],[CCard],[CCardName],[CCardExpiry],[CCardCVV],[Amount],[AmountC],TransactionID,AuthCode,AVSResult,RefID,BSOrder) VALUES (1,'Purchase','" & SqlEnc(trnMessageText) & "'," & Session("OrderID") & "," & Session("ClientID") & ",'" & Now & "','" & SqlEnc(TheCreditCardType) & "','" & EncryptStr(TheCreditCardNumber) & "','" & SqlEnc(TheCreditCardName) & "','" & SqlEnc(TheTempCardExpiry) & "','" & SqlEnc(TheCreditCardCVV) & "'," & OrigAmount & "," & TheTranAmount & ",'" & SqlEnc(trnID) & "','" & SqlEnc(trnAuthCode) & "','" & SqlEnc(trnAVS) & "','" & SqlEnc(trnID) & "','" & Session("OrderID") & "')"
+
+					'Else
+						If Session("InCAD") = 1 Then
+					
+							TSql = "INSERT INTO CCTrans ([Approved],[Type],[Response],[OrderID],[ClientID],[Date],[CCardType],[CCard],[CCardName],[CCardExpiry],[CCardCVV],[Amount],[AmountC],TransactionID,AuthCode,AVSResult,RefID,BSOrder) VALUES (1,'Purchase','" & SqlEnc(trnMessageText) & "'," & Session("OrderID") & "," & Session("ClientID") & ",'" & Now & "','" & SqlEnc(TheCreditCardType) & "','" & EncryptStr(TheCreditCardNumber) & "','" & SqlEnc(TheCreditCardName) & "','" & SqlEnc(TheTempCardExpiry) & "','" & SqlEnc(TheCreditCardCVV) & "'," & OrigAmount & "," & TheTranAmount & ",'" & SqlEnc(trnID) & "','" & SqlEnc(trnAuthCode) & "','" & SqlEnc(trnAVS) & "','" & SqlEnc(trnID) & "','" & Session("OrderID") & "')"
+						Else
+							TSql = "INSERT INTO CCTrans ([Approved],[Type],[Response],[OrderID],[ClientID],[Date],[CCardType],[CCard],[CCardName],[CCardExpiry],[CCardCVV],[Amount],[AmountC],TransactionID,AuthCode,AVSResult,RefID,BSOrder) VALUES (1,'Purchase','" & SqlEnc(trnMessageText) & "'," & Session("OrderID") & "," & Session("ClientID") & ",'" & Now & "','" & SqlEnc(TheCreditCardType) & "','" & EncryptStr(TheCreditCardNumber) & "','" & SqlEnc(TheCreditCardName) & "','" & SqlEnc(TheTempCardExpiry) & "','" & SqlEnc(TheCreditCardCVV) & "'," & TheTranAmount & "," & OrigAmount & ",'" & SqlEnc(trnID) & "','" & SqlEnc(trnAuthCode) & "','" & SqlEnc(trnAVS) & "','" & SqlEnc(trnID) & "','" & Session("OrderID") & "')"
+						End If	
+					'End If
+				    sql = New SqlCommand(TSql, conn)
+				    sql.ExecuteNonQuery()
+
+				Else
+	
+					'trnAVS = GetQueryValue(trnResponse,"avsMessage")
+					TSql = "Update TempOrder SET AuthCode = '" & SqlEnc(trnMessageText) & "' WHERE OrderID=" & Session("OrderID")
+			   		sql = New SqlCommand(TSql, conn)
+			   		sql.ExecuteNonQuery()
+	
+					'TSql = "INSERT INTO CCTrans ([Approved],[Type],[Response],[OrderID],[ClientID],[Date],[CCardType],[CCard],[CCardName],[CCardExpiry],[CCardCVV],[Amount],[AmountC],TransactionID,AVSResult,RefID,BSOrder) VALUES (0,'Purchase','" & SqlEnc(trnMessageText) & "'," & Session("OrderID") & "," & Session("ClientID") & ",'" & Now & "','" & SqlEnc(TheCreditCardType) & "','" & EncryptStr(TheCreditCardNumber) & "','" & SqlEnc(TheCreditCardName) & "','" & SqlEnc(TheTempCardExpiry) & "','" & SqlEnc(TheCreditCardCVV) & "'," & TheTranAmount & ",0,'" & SqlEnc(trnID) & "','" & SqlEnc(trnAVS) & "','" & SqlEnc(trnID) & "','" & Session("OrderID") & "')"
+					' sql = New SqlCommand(TSql, conn)
+					'sql.ExecuteNonQuery()
+					conn.Close
+					Return "2"
+					Exit Function
+				End If
+
+				'Set objSoapClient = Nothing
+				'objXMLHTTP = Nothing
+
+
+			End If
+			'''end beanstream charge
+
+			If IsPaid = 1 OR IsPaid = 0 Then
+				If TheCreditUsed > 0 Then
+					Sql = New SqlCommand("Update Clients SET OrdersPlaced = OrdersPlaced + 1,AvailCredit = AvailCredit - " & TheCreditUsed & " WHERE ClientID = " & Session("ClientID"), conn)
+				Else
+					Sql = New SqlCommand("Update Clients SET OrdersPlaced = OrdersPlaced + 1 WHERE ClientID = " & Session("ClientID"), conn)
+				End If
+   			 	sql.ExecuteNonQuery()
+
+		        Dim RandomClass As New Random()
+				TheTemp = CStr(RandomClass.Next(100000000, 999999999)) & Request.ServerVariables("REMOTE_ADDR") & Now & CStr(RandomClass.Next(100000000, 999999999))
+	       
+                TheUserState = UserState.Text
+		
+				Sql = New SqlCommand("INSERT INTO [Invoice] (OrderID,Temp,[Date],BillFName,BillLName,BillAddress,BillCity,BillState,BillCountry,BillZip,BillPhone,BillFax,ShipFName,ShipLName,ShipAddress,ShipCity,ShipState,ShipCountry,ShipZip,ShipPhone,ShipFax,ShipEmail,Subtotal,SubtotalC,ShipType,ShipPrice,ShipPriceC,Grandtotal,GrandtotalC,IP,CCardNumber,CCardType,CCardName,CCardExpiry,CCardCVV,TotalCOGS,TotalCOGSC,ClientID,[Referer],[AuthCode],[TransactionID],CreditUsed,CreditUsedC,TotalPaid,TotalPaidC,ActualPaid,ActualPaidC,Engine,Paid,ActualShipCost,ActualShipCostC,ShippingID,IPCountry,AVSResult,Site,InCDN,PST,GST,PSTC,GSTC) VALUES (" & Session("OrderID") & ",'" & TheTemp & "','" & Now & "',N'" & SqlEnc(TheBillFirst) & "',N'" & SqlEnc(TheBillLast) & "',N'" & SqlEnc(TheBillAddress) & "',N'" & SqlEnc(TheBillCity) & "','" & SqlEnc(TheBillState) & "','" & SqlEnc(TheBillCountry) & "','" & SqlEnc(TheBillZip) & "','" & SqlEnc(TheBillPhone) & "','" & SqlEnc(TheBillFax) & "',N'" & SqlEnc(UserFirst.Text) & "',N'" & SqlEnc(UserLast.Text) & "',N'" & SqlEnc(UserAddress.Text) & "',N'" & SqlEnc(UserCity.Text) & "','" & SqlEnc(TheUserState) & "','" & SqlEnc(UserCountry.Text) & "','" & SqlEnc(UserZip.Text) & "','" & SqlEnc(UserPhone.Text) & "','" & SqlEnc(UserFax.Text) & "','" & SqlEnc(UserEmail.Text) & "'," & Subtotal & "," & SubtotalC & ",'" & SqlEnc(TheShipType) & "'," & TheShipPrice & "," & TheShipPriceC & "," & TheGrandtotal & "," & TheGrandtotalC & ",'" & Request.ServerVariables("REMOTE_ADDR") & "','" & EncryptStr(TheCreditCardNumber) & "','" & SqlEnc(TheCreditCardType) & "','" & SqlEnc(TheCreditCardName) & "','" & SqlEnc(TheTempCardExpiry) & "','" & SqlEnc(TheCreditCardCVV) & "'," & TotalCOGS & "," & TotalCOGSC & "," & Session("ClientID") & ",'" & SqlEnc(Session("Referer")) & "','" & SqlEnc(trnAuthCode) & "','" & SqlEnc(trnID) & "'," & TheCreditUsed & "," & TheCreditUsedC & "," & TheGrandTotal & "," & TheGrandTotalC & "," & TheGrandTotal & "," & TheGrandtotalC & ",'" & SqlEnc(Session("SearchEngine")) & "'," & IsPaid & "," & TheActualShipCost & "," & TheActualShipCostC & "," & Session("ShippingCode") & ",'" & Session("Country") & "','" & SqlEnc(trnAVS) & "'," & Session("TheCurrentSite") & "," & Session("InCAD") & "," & TheTotalPST & "," & TheTotalGST & "," & TheTotalPSTC & "," & TheTotalGSTC & ")", conn)
+       
+			    sql.ExecuteNonQuery()
+
+				Sql = New SqlCommand("SELECT Invoice FROM [Invoice] WHERE OrderID = " & Session("OrderID"), conn)
+		        dr = sql.ExecuteReader()
+		   	    If dr.Read Then
+					Session("Invoice") = dr("Invoice")
+				End If		
+				dr.Close
+				'If Session("Country") = "Local" Then
+					'If TheChangeCurr <> 1 Then 
+						'Sql = New SqlCommand("UPDATE Invoice SET CDNcharged = " & TheTranAmount & " WHERE Invoice = " & Session("Invoice"), conn)
+						'sql.ExecuteNonQuery()
+					'End If
+				'End If
+
+				Sql = New SqlCommand("INSERT INTO [Item] ([OrderID],[ProductID],[Desc],[Quantity],[Price],[Pricec],[CostPrice],[CostPriceC],[GST],[GSTC],[PST],[PSTC],[Refill],[RefillType],[SSID],[IsPetRx]) SELECT TempItem.[OrderID],TempItem.[ProductID],TempItem.[Desc],TempItem.[Quantity],TempItem.[Price],TempItem.[PriceC],TempItem.[CostPrice],TempItem.[CostPriceC],TempItem.[GST],TempItem.[GSTC],TempItem.[PST],TempItem.[PSTC],TempItem.[Refill],[TempItem].RefillType,TempItem.[SSID],TempItem.[IsPetRx] FROM TempItem Where TempItem.[OrderID]=" & Session("OrderID"), conn)
+		        sql.ExecuteNonQuery()
+				Sql = New SqlCommand("UPDATE [Item] SET Invoice = " & Session("Invoice") & " WHERE OrderID = " & Session("OrderID"), conn)
+		        sql.ExecuteNonQuery()
+				
+				Sql = New SqlCommand("DELETE FROM [Tempitem] WHERE OrderID = " & Session("OrderID"), conn)
+		        sql.ExecuteNonQuery()
+				
+				Sql = New SqlCommand("DELETE FROM [Temporder] WHERE OrderID = " & Session("OrderID"), conn)
+		        sql.ExecuteNonQuery()
+		
+				'Sql = New SqlCommand("UPDATE CCTrans SET Invoice = " & Session("Invoice") & " WHERE OrderID = " & Session("OrderID"), conn)
+				'sql.ExecuteNonQuery()
+		
+		        If Session("CouponOneTime") = 1 OR Session("CouponOneTime") = -1 Then
+					Sql = New SqlCommand("INSERT INTO ClientsCouponsUsed (ClientID,CouponCode) VALUES (" & Session("ClientID") & ",'" & Session("CouponCode") & "')", conn)
+		    	    sql.ExecuteNonQuery()	
+				End If
+						
+				Sql = New SqlCommand("SELECT Password FROM Clients WHERE ClientID = " & Session("ClientID"),conn)
+		        dr = sql.ExecuteReader()
+		   	    If dr.Read Then
+					ThePassword = dr("Password")
+				End If
+		
+				dr.Close
+		
+				''''do send email
+
+				Theaspx = GetFileContents(Server.MapPath("/") & "\receiptemail.html")
+				Theaspx = Replace(Theaspx,"{{ShipEmail}}",UserEmail.Text)
+				Theaspx = Replace(Theaspx,"{{Password}}",ThePassword)
+				Theaspx = Replace(Theaspx,"{{Invoice}}",Session("Invoice"))
+				Theaspx = Replace(Theaspx,"{{Date}}",Now)
+				Theaspx = Replace(Theaspx,"{{ShipFName}}",UserFirst.Text)
+				Theaspx = Replace(Theaspx,"{{ShipLName}}",UserLast.Text)
+				Theaspx = Replace(Theaspx,"{{BillFName}}",TheBillFirst)
+				Theaspx = Replace(Theaspx,"{{BillLName}}",TheBillLast)
+				Theaspx = Replace(Theaspx,"{{ShipAddress}}",UserAddress.Text)
+				Theaspx = Replace(Theaspx,"{{BillAddress}}",TheBillAddress)
+				Theaspx = Replace(Theaspx,"{{ShipCity}}",UserCity.Text)
+				Theaspx = Replace(Theaspx,"{{ShipState}}",TheUserState)
+				Theaspx = Replace(Theaspx,"{{BillCity}}",TheBillCity)
+				Theaspx = Replace(Theaspx,"{{BillState}}",TheBillState)
+				Theaspx = Replace(Theaspx,"{{ShipCountry}}",UserCountry.Text)
+				Theaspx = Replace(Theaspx,"{{ShipZip}}",UserZip.Text)
+				Theaspx = Replace(Theaspx,"{{BillCountry}}",TheBillCountry)
+				Theaspx = Replace(Theaspx,"{{BillZip}}",TheBillZip)
+				Theaspx = Replace(Theaspx,"{{ShipType}}",TheShipType)
+
+				If Session("InCAD") <> 0 Then  
+					Theaspx = Replace(Theaspx,"{{ShipPrice}}",FormatCurrency(TheShipPriceC))
+					Theaspx = Replace(Theaspx,"{{Grandtotal}}",FormatCurrency(TheGrandTotalC) & " CAD")
+					If TheBillCountry = "CA" Then 
+						Theaspx = Replace(Theaspx,"{{GST}}","<table width=""550"" border=""0"" cellspacing=""1"" cellpadding=""5""><tr><td width=""335"" align=""right"" bgcolor=""#FFFFFF"">GST/HST</td><td width=""192"" bgcolor=""#FFFFFF"">" & FormatCurrency(TheTotalGSTC) & "</td></tr></table>")
+						Theaspx = Replace(Theaspx,"{{PST}}","<table width=""550"" border=""0"" cellspacing=""1"" cellpadding=""5""><tr><td width=""335"" align=""right"" bgcolor=""#FFFFFF"">PST</td><td width=""192"" bgcolor=""#FFFFFF"">" & FormatCurrency(TheTotalPSTC) & "</td></tr></table>")
+					Else
+						Theaspx = Replace(Theaspx,"{{GST}}","")
+						Theaspx = Replace(Theaspx,"{{PST}}","")
+					End If
+				Else
+					Theaspx = Replace(Theaspx,"{{ShipPrice}}",FormatCurrency(TheShipPrice))
+					If TheBillCountry = "CA" Then 
+						Theaspx = Replace(Theaspx,"{{GST}}","<table width=""550"" border=""0"" cellspacing=""1"" cellpadding=""5""><tr><td width=""335"" align=""right"" bgcolor=""#FFFFFF"">GST/HST</td><td width=""192"" bgcolor=""#FFFFFF"">" & FormatCurrency(TheTotalGST) & "</td></tr></table>")
+						Theaspx = Replace(Theaspx,"{{PST}}","<table width=""550"" border=""0"" cellspacing=""1"" cellpadding=""5""><tr><td width=""335"" align=""right"" bgcolor=""#FFFFFF"">PST</td><td width=""192"" bgcolor=""#FFFFFF"">" & FormatCurrency(TheTotalPST) & "</td></tr></table>")
+					Else
+						Theaspx = Replace(Theaspx,"{{GST}}","")
+						Theaspx = Replace(Theaspx,"{{PST}}","")
+					End If
+					Theaspx = Replace(Theaspx,"{{Grandtotal}}",FormatCurrency(TheGrandTotal) & " USD")
+				End If
+
+				TSql = "SELECT [Item].* FROM [Item] WHERE Invoice = " & Session("Invoice")
+				Sql = New SqlCommand(TSql, conn)
+		        dr = sql.ExecuteReader()
+		   	    While dr.Read
+					If Session("InCAD") <> 0 Then
+						TheItemsaspx = TheItemsaspx & "<tr><td bgcolor=""#FFFFFF"">" & dr("Quantity") & " " & dr("Desc") & "</td><td bgcolor=""#FFFFFF"">" & FormatCurrency(dr("PriceC") * dr("Quantity")) & "</td></tr>"
+					Else
+						TheItemsaspx = TheItemsaspx & "<tr><td bgcolor=""#FFFFFF"">" & dr("Quantity") & " " & dr("Desc") & "</td><td bgcolor=""#FFFFFF"">" & FormatCurrency(dr("Price") * dr("Quantity")) & "</td></tr>"
+					End If
+		
+				End While		
+
+				Theaspx = Replace(Theaspx,"{{AllItems}}",TheItemsaspx)
+				dr.Close
+  
+				conn.Close()
+				sql = Nothing
+				conn = Nothing
+
+				Dim iMsg As New MailMessage()
+
+				iMsg.To.Add (New MailAddress(UserEmail.Text))
+				iMsg.CC.Add (New MailAddress("contact@biosensehealth.com"))
+				iMsg.Bcc.Add (New MailAddress("jamie@gurumatrix.com"))
+				iMsg.From = New MailAddress("contact@biosensehealth.com")
+				iMsg.Subject = "Order from " & Session("CompanyName")
+				iMsg.Body = Theaspx
+				iMsg.IsBodyHTML = True
+				iMsg.Priority = MailPriority.Normal
+
+				Dim iSMTP As New SmtpClient
+				Try
+					iSMTP.Send(iMsg)
+					Catch Ex As Exception
+				End Try
+
+
+				iSMTP = nothing
+				iMsg = nothing
+
+
+				Return "1"
+			Else
+				Return "2"
+			End If	
+    End Function
+
+
+    Protected Sub ShippingOptions_Changed(ByVal sender As Object, ByVal e As System.EventArgs)
+		
+		Dim ShipOpts
+		
+		ShipOpts = Split(ShippingOptions.SelectedItem.Value,",")
+
+		Session("ShippingCode") = ShipOpts(0)	
+		TheShippingCode = ShipOpts(0)
+		TheActualShipCostC = ShipOpts(2)
+		TheActualShipCost = Math.Round(TheActualShipCostC * Session("ExchangeCADUSD"),2)
+		Session("TheActualShipCostC") = ShipOpts(2)
+		Session("TheActualShipCost") = Math.Round(TheActualShipCostC * Session("ExchangeCADUSD"),2)
+        TheShippingTotal = ShipOpts(1)
+
+		TheShippingDesc = ShippingOptions.SelectedItem.Text
+		ShipType.Text = Replace(Replace(Replace(ShippingOptions.SelectedItem.Text," - $22.00","")," - $13.00","")," - $49.50","")
+        ShippingTotal.Text = FormatCurrency(TheShippingTotal, 2)
+        If UserCountry.Text = "CA" Then
+			OrderTotal.Text = FormatCurrency(TheOrderTotal + TheShippingTotal + GSTTotal.Text  + PSTTotal.Text, 2) & TheCurrency 
+		Else        
+			OrderTotal.Text = FormatCurrency(TheOrderTotal + TheShippingTotal, 2) & TheCurrency
+		End If
+		Session("ShippingCostC") = TheActualShipCostC
+		Session("ShippingCost") = TheActualShipCost
+		Session("ShippingTotal") = TheShippingTotal
+		Session("ShippingDesc") = TheShippingDesc
+		'Session("ShippingValue") = ShippingOptions.SelectedItem.Value
+		'Response.Redirect("checkoutfinal.aspx")
+	End Sub
+	
+
+    Protected Sub UserState_Changed(ByVal sender As Object, ByVal e As System.EventArgs)
+        Dim connA As New SqlConnection(ConnString)
+        Dim drA As SqlDataReader
+        Dim sqlA As New SqlCommand
+
+	 	If TheBillCountry  = "CA" Then
+			PSTDiv.Visible = True
+			GSTDiv.Visible = True
+
+            sqlA = New SqlCommand("SELECT TempItem.Quantity,TempItem.ID,TempItem.Price,TempItem.PriceC,Products.GST,Products.PST FROM TempItem INNER JOIN Products ON Products.ProductID = TempItem.ProductID WHERE OrderID = " & Session("OrderID"), connA)
+            connA.Open()
+			drA = sqlA.ExecuteReader()
+            Dim TheGST,TheGSTC,ThePST,ThePSTC As Single
+			While drA.Read 
+    			TheGST = 0
+			    TheGSTC = 0
+			    ThePST = 0
+			    ThePSTC = 0
+			    If drA("GST") <> 0 Then
+    				If UserState.SelectedItem.Value = "NB" OR UserState.SelectedItem.Value = "NL" or UserState.SelectedItem.Value = "ON" Then
+					    TheGSTC = Math.Round((drA("Quantity") * drA("PriceC")) * .13,2)
+					    TheGST = Math.Round((drA("Quantity") * drA("Price")) * .13,2)
+				    Else
+    					If UserState.SelectedItem.Value = "NS" Then
+						    TheGSTC = Math.Round((drA("Quantity") * drA("PriceC")) * .15,2)
+					    	TheGST = Math.Round((drA("Quantity") * drA("Price")) * .15,2)
+						Else
+		   					If UserState.SelectedItem.Value = "BC" Then		
+							    TheGSTC = Math.Round((drA("Quantity") * drA("PriceC")) * .05,2)
+							    TheGST = Math.Round((drA("Quantity") * drA("Price")) * .05,2)
+							Else
+    							TheGSTC = Math.Round((drA("Quantity") * drA("PriceC")) * .05,2)
+							    TheGST = Math.Round((drA("Quantity") * drA("Price")) * .05,2)
+				    		End If
+						End If
+					End If
+				End If
+				If UserState.SelectedItem.Value="BC" AND drA("PST") <> 0 Then
+							    ThePSTC = Math.Round((drA("Quantity") * drA("PriceC")) * .07,2)
+							    ThePST = Math.Round((drA("Quantity") * drA("Price")) * .07,2)				
+				End If
+		
+    			sqlA = New SqlCommand("UPDATE TempItem SET GST = " & TheGST & ",PST = " & ThePST & ",GSTC = " & TheGSTC & ",PSTC = " & ThePSTC & " WHERE ID = " & drA("ID"), connA)
+				sqlA.ExecuteNonQuery
+            End While
+
+	        sqlA = New SqlCommand("SELECT SUM([Tempitem].[CostPrice] * [Tempitem].[Quantity]) AS TotalCOGS,SUM([Tempitem].[CostPriceC] * [Tempitem].[Quantity]) AS TotalCOGSC, SUM([Tempitem].[Price] * [Tempitem].[Quantity]) AS Subtotal,SUM([Tempitem].[PriceC] * [Tempitem].[Quantity]) AS SubtotalC,SUM(PST) AS TotalPST, SUM(PSTC) AS TotalPSTC, SUM(GST) AS TotalGST, SUM(GSTC) AS TotalGSTC FROM [Tempitem] WHERE OrderID = " & Session("OrderID"), connA)
+	        drA = sqlA.ExecuteReader()
+	        If drA.Read Then
+	            Subtotal = Math.Round(drA("Subtotal"), 2)
+	            SubtotalC = Math.Round(drA("SubtotalC"), 2)
+	            TotalCOGS = Math.Round(drA("TotalCOGS"), 2)
+	            TotalCOGSC = Math.Round(drA("TotalCOGSC"), 2)
+	    		TheTotalPST = Math.Round(drA("TotalPST"),2)
+			    TheTotalGST = Math.Round(drA("TotalGST"),2)
+			    TheTotalPSTC = Math.Round(drA("TotalPSTC"),2)
+			    TheTotalGSTC = Math.Round(drA("TotalGSTC"),2)
+	        	GSTTotal.Text = FormatCurrency(TheTotalGSTC,2)
+	        	PSTTotal.Text = FormatCurrency(TheTotalPSTC,2)
+				OrderTotal.Text = FormatCurrency(TheOrderTotal + TheShippingTotal + TheTotalGSTC + TheTotalPSTC,2) & TheCurrency
+			End If
+	        drA.Close()
+	        sqlA = New SqlCommand("UPDATE [Temporder] SET ClientID = " & Session("ClientID") & ",TotalCOGS = " & TotalCOGS & ",TotalCOGSC = " & TotalCOGSC & ",Subtotal = " & Subtotal & ",SubtotalC = " & SubtotalC & ",GSTC = " & TheTotalGSTC & ",GST = " & TheTotalGST & ",PSTC = " & TheTotalPSTC & ",PST = " & TheTotalPST & " WHERE OrderID = " & Session("OrderID"), connA)
+	        sqlA.ExecuteNonQuery()
+		Else
+			GSTDiv.Visible = False
+			PSTDiv.Visible = False
+			sqlA = New SqlCommand("UPDATE TempItem SET GST = 0,PST = 0,GSTC = 0,PSTC = 0 WHERE OrderID = " & drA("OrderID"), connA)
+			sqlA.ExecuteNonQuery
+    		sqlA = New SqlCommand("SELECT SUM([Tempitem].[CostPrice] * [Tempitem].[Quantity]) AS TotalCOGS,SUM([Tempitem].[CostPriceC] * [Tempitem].[Quantity]) AS TotalCOGSC, SUM([Tempitem].[Price] * [Tempitem].[Quantity]) AS Subtotal,SUM([Tempitem].[PriceC] * [Tempitem].[Quantity]) AS SubtotalC,SUM(PST) AS TotalPST, SUM(PSTC) AS TotalPSTC, SUM(GST) AS TotalGST, SUM(GSTC) AS TotalGSTC FROM [Tempitem] WHERE OrderID = " & Session("OrderID"), connA)
+	        drA = sqlA.ExecuteReader()
+	        If drA.Read Then
+	            Subtotal = Math.Round(drA("Subtotal"), 2)
+	            SubtotalC = Math.Round(drA("SubtotalC"), 2)
+	            TotalCOGS = Math.Round(drA("TotalCOGS"), 2)
+	            TotalCOGSC = Math.Round(drA("TotalCOGSC"), 2)
+	 			OrderTotal.Text = FormatCurrency(TheOrderTotal + TheShippingTotal,2) & TheCurrency
+			End If
+	        sqlA = New SqlCommand("UPDATE [Temporder] SET ClientID = " & Session("ClientID") & ",TotalCOGS = " & TotalCOGS & ",TotalCOGSC = " & TotalCOGSC & ",Subtotal = " & Subtotal & ",SubtotalC = " & SubtotalC & ",GSTC = 0,GST = 0,PSTC = 0,PST = 0 WHERE OrderID = " & Session("OrderID"), connA)
+	        sqlA.ExecuteNonQuery()
+	
+	 	End If
+		drA.Close
+		connA.Close
+		drA = nothing
+		connA = nothing
+		sqlA = nothing
+	End Sub 
+
+
+    Protected Sub BillSame_OnCheckedChanged(ByVal sender As Object, ByVal e As System.EventArgs)
+ 		If BillSame.Checked Then
+            If TheError = "" Then
+                ErrorText.Visible = False                
+            End If
+            ErrorText.Visible = False
+            BillFirst.Enabled = False
+            BillLast.Enabled = False
+            BillAddress.Enabled = False
+            BillCity.Enabled = False
+			'If UserCountry.Text = "HK" OR UserCountry.Text="CN" Then
+				'BillCountryAlt.Enabled = False
+			'Else
+				BillCountry.Enabled = False
+			'End If
+            BillZip.Enabled = False
+            BillPhone.Enabled = False	
+            BillFax.Enabled = False	
+			BillLabelFirst.CssClass="ErrorNormalLabel"			
+			BillLabelLast.CssClass="ErrorNormalLabel"			
+			BillLabelAddress.CssClass="ErrorNormalLabel"			
+			BillLabelCity.CssClass="ErrorNormalLabel"			
+			BillLabelZip.CssClass="ErrorNormalLabel"			
+			BillLabelPhone.CssClass="ErrorNormalLabel"
+            BillState.Enabled = False
+			BillLabelState.CssClass="ErrorNormalLabel"			
+					
+		Else
+            If TheError = "" Then
+                ErrorText.Visible = False
+            End If
+            BillFirst.Enabled = True
+            BillLast.Enabled = True
+            BillAddress.Enabled = True
+            BillCity.Enabled = True
+			'If UserCountry.Text = "HK" OR UserCountry.Text="CN" Then
+				'BillCountryAlt.Enabled = True
+			'Else
+				BillCountry.Enabled = True
+			'End If
+			
+            BillZip.Enabled = True
+            BillPhone.Enabled = True		
+            BillFax.Enabled = True	
+
+       		BillState.Enabled = True
+		End If
+ 	End Sub
+  
+
+    Protected Function ValidateEmail(ByVal a As String) As Boolean
+        
+        If InStr(a, "@") < 3 And InStr(a, ".") < 4 Then
+            Return False
+        Else
+            Return True
+        End If  
+    End Function
+
+
+    Protected Sub OrderNowButton_Click(ByVal sender As Object, ByVal e As System.EventArgs)
+		Dim AnyErrors As Boolean = False
+        Dim AnyCCErrors As Boolean = False
+        Dim AnyBillErrors As Boolean = False
+        Dim EmailError As Boolean = False
+        Dim AnyShipErrors As Boolean = False
+		
+        OrderNowButton.Enabled = False
+		'check Shipping Info'
+		If UserFirst.Text = "" Then
+            LabelFirst.CssClass = "ErrorRedLabel"
+			AnyErrors = True
+		Else
+			LabelFirst.CssClass = "ErrorNormalLabel"
+		End If
+
+		If UserLast.Text = "" Then
+			LabelLast.CssClass = "ErrorRedLabel"
+			AnyErrors = True
+		Else
+			LabelLast.CssClass = "ErrorNormalLabel"
+		End If
+
+		If UserEmail.Text = "" Then
+			LabelEmail.CssClass = "ErrorRedLabel"
+			AnyErrors = True
+		Else
+			If ValidateEmail(UserEmail.Text) Then 
+				LabelEmail.CssClass = "ErrorNormalLabel"
+			Else
+			LabelEmail.CssClass = "ErrorRedLabel"
+			EmailError = True
+			End If
+		End If
+
+		If UserAddress.Text = "" Then
+			LabelAddress.CssClass = "ErrorRedLabel"
+			AnyErrors = True
+		Else
+			LabelAddress.CssClass = "ErrorNormalLabel"
+		End If
+		
+		If UserCity.Text = "" Then
+			LabelCity.CssClass = "ErrorRedLabel"
+			AnyErrors = True
+		Else
+			LabelCity.CssClass = "ErrorNormalLabel"
+		End If
+
+		If UserState.SelectedItem.Value = "none" Then
+                LabelState.CssClass = "ErrorRedLabel"
+			AnyErrors = True
+		Else
+                LabelState.CssClass = "ErrorNormalLabel"
+		End If
+
+		
+		If UserZip.Text = "" Then
+			LabelZip.CssClass = "ErrorRedLabel"
+			AnyErrors = True
+		Else
+			LabelZip.CssClass = "ErrorNormalLabel"
+		End If
+		
+		If UserPhone.Text = "" Then
+			LabelPhone.CssClass = "ErrorRedLabel"
+			AnyErrors = True
+		Else
+			LabelPhone.CssClass = "ErrorNormalLabel"
+		End If
+
+		'check billing info
+        If Not BillSame.Checked Then
+            
+            If BillFirst.Text = "" Then
+                BillLabelFirst.CssClass = "ErrorRedLabel"
+                AnyBillErrors = True
+            Else
+                BillLabelFirst.CssClass = "ErrorNormalLabel"
+            End If
+
+            If BillLast.Text = "" Then
+                BillLabelLast.CssClass = "ErrorRedLabel"
+                AnyBillErrors = True
+            Else
+                BillLabelLast.CssClass = "ErrorNormalLabel"
+            End If
+
+            If BillAddress.Text = "" Then
+                BillLabelAddress.CssClass = "ErrorRedLabel"
+                AnyBillErrors = True
+            Else
+                BillLabelAddress.CssClass = "ErrorNormalLabel"
+            End If
+		
+            If BillCity.Text = "" Then
+                BillLabelCity.CssClass = "ErrorRedLabel"
+                AnyBillErrors = True
+            Else
+                BillLabelCity.CssClass = "ErrorNormalLabel"
+            End If
+
+            If BillState.SelectedItem.Value = "none" Then
+                BillLabelState.CssClass = "ErrorRedLabel"
+                AnyBillErrors = True
+            Else
+                BillLabelState.CssClass = "ErrorNormalLabel"
+            End If
+
+            If BillZip.Text = "" Then
+                BillLabelZip.CssClass = "ErrorRedLabel"
+                AnyBillErrors = True
+            Else
+                BillLabelZip.CssClass = "ErrorNormalLabel"
+            End If
+		
+            If BillPhone.Text = "" Then
+                BillLabelPhone.CssClass = "ErrorRedLabel"
+                AnyBillErrors = True
+            Else
+                BillLabelPhone.CssClass = "ErrorNormalLabel"
+            End If
+			
+			'If UserCountry.Text = "HK" OR UserCountry.Text = "CN" Then
+				'If BillCountryAlt.SelectedItem.Value = "none" Then
+					'BillLabelCountry.CssClass = "ErrorRedLabel"
+				'Else
+					'BillLabelCountry.CssClass = "ErrorNormalLabel"
+				'End If
+					
+			'End If
+            
+        End If
+
+        'check credit card info
+        If CreditCardType.SelectedItem.Value = "none" Then
+            LabelCCType.CssClass = "ErrorRedLabel"
+            AnyCCErrors = True
+        Else
+            LabelCCType.CssClass = "ErrorNormalLabel"
+        End If
+        If CreditCardType.SelectedItem.Value <> "PayPal" Then
+		 	If CreditCardExpMonth.SelectedItem.Value = "none" Or CreditCardExpYear.SelectedItem.Value = "none" Then
+            	LabelCCExpiry.CssClass = "ErrorRedLabel"
+            	AnyCCErrors = True
+         	Else
+            	LabelCCExpiry.CssClass = "ErrorNormalLabel"
+         	End If
+            
+			If CreditCardName.Text = "" Then
+				LabelCCName.CssClass = "ErrorRedLabel"
+			AnyCCErrors = True
+			Else
+				LabelCCName.CssClass = "ErrorNormalLabel"
+			End If
+			If CreditCardNumber.Text = "" Then
+				LabelCCNumber.CssClass = "ErrorRedLabel"
+				AnyCCErrors = True
+			Else
+				LabelCCNumber.CssClass = "ErrorNormalLabel"
+			End If
+			If CreditCardCVV.Text = "" Then
+				LabelCCCVV.CssClass = "ErrorRedLabel"
+				AnyCCErrors = True
+			Else
+				LabelCCCVV.CssClass = "ErrorNormalLabel"
+			End If
+		End If
+
+            
+
+        If ShippingOptions.SelectedItem.Value = "0,0,0" Then
+            LabelShippingOptions.CssClass = "ErrorRedLabel"
+		    AnyShipErrors = True
+		Else
+            LabelShippingOptions.CssClass = "ErrorNormalLabel"					
+        End If
+
+
+        If AnyErrors Or AnyBillErrors Or AnyCCErrors Or AnyShipErrors Then
+            If AnyErrors Then
+                TheError = "There is missing shipping info."
+            End If
+            If AnyBillErrors Then
+                TheError = TheError & " There is missing billing info."
+            End If
+            If AnyCCErrors Then
+                TheError = TheError & " There is missing payment info."
+            End If
+            If AnyShipErrors Then
+                TheError = TheError & " Shipping type not selected."
+            End If
+			
+            ErrorText.Visible = True
+            OrderNowButton.Enabled = True
+        Else
+			Dim TempCCC As String
+			TempCCC = ChargeCreditCard
+			Select Case TempCCC
+				Case "1"
+					'Response.Redirect("/thankyouorder.aspx")
+					If TheCreditCardType = "PayPal" Then
+						Session("OrderID") = 0
+						Response.Redirect("/04_checkoutpaypal.aspx")
+					Else
+						Response.Redirect("/04_thankyou.aspx")
+					End If
+				Case "2"		           
+					TheError = "Your credit card has been declined.<br>Common reasons for declined credit cards are:<br><ul class=""DeclinedCC""><li>Name on Card, Credit Card Number or Expiry Date is wrong.</li><li>Billing info does not match the address associated with your credit card.</li><li>Some credit card companies only take online orders AFTER you have informed them. If this is the case, please contact your credit card company and inform them that you expect to have a transaction from <b>Biosense Clinical</b> in Canada, then try again.</li></ul></font>"
+				   ErrorText.Visible = True
+		           OrderNowButton.Enabled = True				
+				Case Else				
+				   TheError = "Error with credit card information:<br>" & TempCCC
+		           ErrorText.Visible = True
+		           OrderNowButton.Enabled = True
+        	End Select
+			    
+        End If
+    End Sub
+    
+    Sub Page_Load()
+        
+        Dim conn As New SqlConnection(ConnString)
+        Dim dr As SqlDataReader
+        Dim sql As New SqlCommand
+        Dim TempDate As Date
+        Dim TDate
+        If Session("ClientID") < 1 Then
+            Response.Redirect("http://www.b12cream.com/cart.aspx")
+        End If
+
+		
+	 	Page.MaintainScrollPositionOnPostback=True
+		'CC1.Visible = False
+		'CC2.Visible = False
+		'CC3.Visible = False
+		'CC4.Visible = False
+		'CC5.Visible = False
+		'OldCard.Visible = False
+        conn.Open()
+        If Session("CouponOneTime") = 1 OR Session("CouponOneTime") = -1 Then
+
+	        sql = New SqlCommand("SELECT ClientID From ClientsCouponsUsed WHERE ClientID=" & Session("ClientID") & " AND CouponCode='" & Session("CouponCode") & "'", conn)
+    	    dr = sql.ExecuteReader()
+	        If dr.Read Then
+				If NOT IsDBNull(dr("ClientID")) Then
+					DeleteCoupon = True
+				End If
+			End If		
+			dr.Close			
+		End If
+		
+		If DeleteCoupon Then
+			sql = New SqlCommand("DELETE FROM TempItem WHERE ID=" & Session("CouponID") , conn)
+	        sql.ExecuteNonQuery()	
+			DeleteCoupon = False
+			Session("CouponCode") = ""
+			Session("CouponAmount") = 0
+			Session("CouponMin") = 0
+			Session("CouponProductID") = 0
+ 			Session("CouponOneTime") = 0
+		End If
+		'Start check cart for items
+        sql = New SqlCommand("SELECT COUNT(*) As NumRows From TempItem WHERE OrderID=" & Session("OrderID"), conn)
+        dr = sql.ExecuteReader()
+        If dr.Read Then
+            If Not IsDBNull(dr("NumRows")) Then
+                If CInt(dr("NumRows")) < 1 Then
+                    dr.close()
+                    Conn.Close()
+                    dr = Nothing
+                    conn = Nothing
+                    Response.Redirect("/04_cart.aspx")
+                End If
+            Else
+                dr.close()
+                Conn.Close()
+                dr = Nothing
+                conn = Nothing
+                Response.Redirect("/04_cart.aspx")
+            End If
+        Else
+            dr.close()
+            Conn.Close()
+            dr = Nothing
+            conn = Nothing
+            Response.Redirect("/04_cart.aspx")
+
+        End If
+        'End check cart for items       
+        dr.Close()
+
+        sql = New SqlCommand("SELECT * FROM [Clients] WHERE ClientID =" & Session("ClientID"), conn)
+        dr = sql.ExecuteReader()
+        If dr.Read Then
+            ShipFName = dr("ShipFName")
+            ShipLName = dr("ShipLName")
+            ShipEmail = dr("ShipEmail")
+            ShipAddress = dr("ShipAddress")
+            ShipCity = dr("ShipCity")
+            ShipZip = dr("ShipZip")
+            ShipPhone = dr("ShipPhone")
+            ShipState = dr("ShipState")
+            ShipCountry = dr("ShipCountry")
+			ReferredBy = dr("ReferredBy")
+			OrdersPlaced = dr("OrdersPlaced")
+			Session("TheCountry") = ShipCountry
+            If Not IsDBNull(dr("ShipFax")) Then
+                ShipFax = dr("ShipFax")
+            Else
+                ShipFax = ""
+            End If
+            TotalCredit = Math.Round(dr("AvailCredit"), 2)
+			If Not IsDBNull(dr("ShipFax")) Then
+                ShipFax = dr("ShipFax")
+            Else
+                ShipFax = ""
+            End If
+            TotalCredit = Math.Round(dr("AvailCredit"), 2)
+			'If Not IsDBNull(dr("CCardNumber")) Then
+				'If dr("CCardNumber") <> "" Then
+					'CCardNumber = DecryptStr(dr("CCardNumber"))
+				'Else
+ 					'CCardNumber = ""
+ 				'End If
+ 			'Else
+  				'CCardNumber = ""
+  			'End If
+			'If Not IsDBNull(dr("CCardName")) Then
+				'If dr("CCardName") <> "" Then
+					'CCardName = dr("CCardName")
+				'Else
+					'CCardName = ""
+				'End If
+				
+     		'Else
+	      		'CCardName = ""
+	      	'End If
+	       'If Not IsDBNull(dr("CCardType")) Then
+	        	'If dr("CCardType") <> "" Then
+	        		'CCardType = dr("CCardType")
+				'Else
+					'CCardType = ""
+				'End If
+     		'Else
+      			'CCardType = ""
+      		'End If
+           	'If Not IsDBNull(dr("CCardExpiry")) Then
+           		'If dr("CCardExpiry") <> "" AND dr("CCardExpiry") <> "none/none" Then
+            		'CCardExpiry = dr("CCardExpiry")
+             		'TDate = Split(CCardExpiry, "/")
+             		'Select Case TDate(0)
+			            'Case 1, 3, 5, 7, 8, 10, 12
+			             	'TempDate = TDate(0) & "/31/" & TDate(1)
+	               		'Case 4, 6, 9, 11
+		                	'TempDate = TDate(0) & "/30/" & TDate(1)
+		                'Case 2
+	                 		'If (TDate(0) / 4) - (Math.Round(TDate(0) / 4, 0)) = 0 Then
+			                 	'TempDate = TDate(0) & "/29/" & TDate(1) & " 11:59:59 PM"
+	                 		'Else
+			                 	'TempDate = TDate(0) & "/28/" & TDate(1) & " 11:59:59 PM"
+	                 		'End If
+					
+            		'End Select
+				   	'If TempDate > Now Then
+				    	'OldCard.Visible = False
+			     	'End If
+  				'Else
+					'CCardExpiry = ""
+					'OldCard.Visible = False
+				'End If
+			'Else
+ 				'CCardExpiry = ""
+  				'OldCard.Visible = False
+   			'End If
+  		 	'If Not IsDBNull(dr("CCardCVV")) Then
+ 				'If dr("CCardCVV") <> "" Then
+     				'CCardCVV = dr("CCardCVV")
+				'Else
+					'CCardCVV = ""
+				'End If
+         	'Else
+          		'CCardCVV = ""
+          	'End If
+        End If
+		'update cart
+        
+		If NOT IsPostBack
+		 
+			'If ShipCountry = "HK" OR ShipCountry="CN" Then
+				'BillCountry.Visible = False
+				'BillCountryAlt.Visible = True
+			'Else
+				'BillCountry.Visible = True
+				'BillCountryAlt.Visible = False		 
+			'End If
+			 
+		 	If ShipCountry  = "CA" Then
+				PSTDiv.Visible = True
+				GSTDiv.Visible = True
+
+	            sql = New SqlCommand("SELECT TempItem.Quantity,TempItem.ID,TempItem.Price,TempItem.PriceC,Products.GST,Products.PST FROM TempItem INNER JOIN Products ON Products.ProductID = TempItem.ProductID WHERE OrderID = " & Session("OrderID"), conn)
+	            dr = sql.ExecuteReader()
+	            Dim TheGST,TheGSTC,ThePST,ThePSTC As Single
+	            While dr.Read 
+	    			TheGST = 0
+				    TheGSTC = 0
+				    ThePST = 0
+				    ThePSTC = 0
+				    If dr("GST") <> 0 Then
+	    				If ShipState = "NB" OR ShipState = "NL" or ShipState = "ON" Then
+						    TheGSTC = Math.Round((dr("Quantity") * dr("PriceC")) * .13,2)
+						    TheGST = Math.Round((dr("Quantity") * dr("Price")) * .13,2)
+					    Else
+	    					If ShipState = "NS" Then
+							    TheGSTC = Math.Round((dr("Quantity") * dr("PriceC")) * .15,2)
+						    	TheGST = Math.Round((dr("Quantity") * dr("Price")) * .15,2)
+							Else
+			   					If ShipState = "BC" Then		
+								    TheGSTC = Math.Round((dr("Quantity") * dr("PriceC")) * .05,2)
+								    TheGST = Math.Round((dr("Quantity") * dr("Price")) * .05,2)
+								Else
+	    							TheGSTC = Math.Round((dr("Quantity") * dr("PriceC")) * .05,2)
+								    TheGST = Math.Round((dr("Quantity") * dr("Price")) * .05,2)
+					    		End If
+							End If
+						End If
+	 				End If
+					If ShipState = "BC" Then
+					 	If dr("PST") <> 0 Then
+						    ThePSTC = Math.Round((dr("Quantity") * dr("PriceC")) * .07,2)
+						    ThePST = Math.Round((dr("Quantity") * dr("Price")) * .07,2)
+					 	End If
+					Else
+		 				ThePSTC = 0
+						ThePST = 0
+					End If
+					
+				    If TheGST > 0 OR ThePST > 0 Then
+	    				Sql = New SqlCommand("UPDATE TempItem SET GST = " & TheGST & ",PST = " & ThePST & ",GSTC = " & TheGSTC & ",PSTC = " & ThePSTC & " WHERE ID = " & dr("ID"), conn)
+					    sql.ExecuteNonQuery
+				    End If
+
+	            End While
+	         	dr.Close
+		 	Else
+				PSTDiv.Visible = False
+				GSTDiv.Visible = False	
+		 	End If
+
+		End If
+
+        sql = New SqlCommand("SELECT SUM([Tempitem].[CostPrice] * [Tempitem].[Quantity]) AS TotalCOGS,SUM([Tempitem].[CostPriceC] * [Tempitem].[Quantity]) AS TotalCOGSC, SUM([Tempitem].[Price] * [Tempitem].[Quantity]) AS Subtotal,SUM([Tempitem].[PriceC] * [Tempitem].[Quantity]) AS SubtotalC,SUM(PST) AS TotalPST, SUM(PSTC) AS TotalPSTC, SUM(GST) AS TotalGST, SUM(GSTC) AS TotalGSTC FROM [Tempitem] WHERE OrderID = " & Session("OrderID"), conn)
+        dr = sql.ExecuteReader()
+        If dr.Read Then
+            Subtotal = Math.Round(dr("Subtotal"), 2)
+            SubtotalC = Math.Round(dr("SubtotalC"), 2)
+            TotalCOGS = Math.Round(dr("TotalCOGS"), 2)
+            TotalCOGSC = Math.Round(dr("TotalCOGSC"), 2)
+    		TheTotalPST = Math.Round(dr("TotalPST"),2)
+		    TheTotalGST = Math.Round(dr("TotalGST"),2)
+		    TheTotalPSTC = Math.Round(dr("TotalPSTC"),2)
+		    TheTotalGSTC = Math.Round(dr("TotalGSTC"),2)
+        	GSTTotal.Text = FormatCurrency(TheTotalGSTC,2)
+        	PSTTotal.Text = FormatCurrency(TheTotalPSTC,2)
+		End If
+        dr.Close()
+        sql = New SqlCommand("UPDATE [Temporder] SET ClientID = " & Session("ClientID") & ",TotalCOGS = " & TotalCOGS & ",TotalCOGSC = " & TotalCOGSC & ",Subtotal = " & Subtotal & ",SubtotalC = " & SubtotalC & ",GSTC = " & TheTotalGSTC & ",GST = " & TheTotalGST & ",PSTC = " & TheTotalPSTC & ",PST = " & TheTotalPST & " WHERE OrderID = " & Session("OrderID"), conn)
+        sql.ExecuteNonQuery()
+
+
+		'Dim IPAddr As String = Request.ServerVariables("REMOTE_ADDR")
+		'Dim FullURL As String = "BiosensePharmacy.com" & Request.ServerVariables("URL") & "?" & Request.ServerVariables("QUERY_STRING")
+		'Dim UserAgent As String = Request.ServerVariables("HTTP_USER_AGENT")
+		'Dim TSql As String  = "INSERT INTO WebLogs ([Date],[Referer],[IP],[URL],[UserAgent],[NewSession],[Engine],[Country],[Notes]) VALUES ('" & Now & "','" & SqlEnc(Session("Referer")) & "','" & IPAddr & "','" & SqlEnc(FullURL) & "','" & SqlEnc(UserAgent) & "'," & Session("NewSession") & ",'" & Session("SearchEngine") & "','" & Session("Country") & "','" & SqlEnc(ShipFName & " " & ShipLName) & "')"
+		'sql = New SqlCommand(TSql, conn)
+		'sql.ExecuteNonQuery()
+		'Session("NewSession") = 0
+
+        sql = New SqlCommand("SELECT COUNT(*) As NumRows FROM TempItem WHERE OrderID = " & Session("OrderID"), conn)
+        dr = sql.ExecuteReader()
+        If dr.Read Then
+            NumRows = dr("NumRows")
+        Else
+            NumRows = 0
+        End If
+        dr.Close()
+        If NumRows > 0 Then
+            ReDim ThePrice(NumRows)
+            ReDim TheDesc(NumRows)
+            ReDim TheID(NumRows)
+            ReDim TheQuantity(NumRows)
+ 
+            If Session("InCAD") = 0 Then
+                sql = New SqlCommand("SELECT ID,Quantity,[Desc],Price,SSID FROM TempItem WHERE OrderID = " & Session("OrderID"), conn)
+            Else
+                sql = New SqlCommand("SELECT ID,Quantity,[Desc],PriceC As Price,SSID FROM TempItem WHERE OrderID = " & Session("OrderID"), conn)
+            End If
+            
+            dr = sql.ExecuteReader()
+            Dim II As Integer
+            II = -1
+            While dr.Read
+				If dr("Price") < 0 Then
+					If dr("SSID") = 92071 Then
+						VIPApplied = True
+					Else
+						DiscountApplied = True
+					End If
+				End If
+                II = II + 1
+                ThePrice(II) = dr("Price")
+                TheDesc(II) = dr("Desc")
+                TheID(II) = dr("ID")
+                TheQuantity(II) = dr("Quantity")
+                TheOrderTotal = TheOrderTotal + (dr("Price") * dr("Quantity"))
+            End While
+            dr.Close()
+			'HidOrderTotal.Text = TheOrderTotal
+        End If
+        
+
+        dr.Close()
+
+		'start affiliate discount
+		If ReferredBy<> "0" Then
+			If OrdersPlaced = 0 And NOT DiscountApplied Then
+
+				sql = New SqlCommand("SELECT AffID From Affiliates WHERE AffiliateID = '" & ReferredBy & "'", conn)
+		        dr = sql.ExecuteReader()
+	    	  	If dr.Read Then
+					If NOT IsDBNull(dr("AffID")) Then
+	        	    	AffiliateGood = True
+					End If
+		        End If
+				dr.Close
+				
+				If AffiliateGood Then
+					Dim TempDiscount,TempDiscountC As Single
+					TempDiscount = Math.Round(Subtotal *.05,2) * -1
+					TempDiscountC = Math.Round(SubtotalC *.05,2) * -1
+					sql = New SqlCommand("INSERT INTO TempItem ([Desc],[Quantity],[Price],[PriceC],[CostPrice],[CostPriceC],[ProductID],[OrderID],SSID) VALUES ('First Order Discount',1," & TempDiscount & "," & TempDiscountC & ",0,0,75783," & Session("OrderID") & ",91445)", conn)
+			        sql.ExecuteNonQuery()
+				
+					conn.Close
+					Response.Redirect("/checkoutfinal.aspx")
+				End If
+			End If
+		End If
+
+		'start VIP Discount
+		If Session("IsVIP") = 1 AND NOT VIPApplied Then
+			Dim TempDiscount,TempDiscountC As Single
+			TempDiscount = Math.Round(Subtotal *.05,2) * -1
+			TempDiscountC = Math.Round(SubtotalC *.05,2) * -1
+			sql = New SqlCommand("INSERT INTO TempItem ([Desc],[Quantity],[Price],[PriceC],[CostPrice],[CostPriceC],[ProductID],[OrderID],SSID) VALUES ('VIP Member - 5% Discount',1," & TempDiscount & "," & TempDiscountC & ",0,0,76200," & Session("OrderID") & ",92071)", conn)
+	        sql.ExecuteNonQuery()
+		
+			conn.Close	
+			Response.Redirect("/checkoutfinal.aspx")
+		End If
+        conn.Close()
+        dr = Nothing
+        conn = Nothing
+		If Session("InCAD") = 0 Then
+			TheCurrency=" USD"
+		Else
+			TheCurrency=" CAD"
+		End If
+
+		If NOT IsPostBack Then
+			If Session("ShippingCode") = 0 Then
+	 			TheShippingCode = 0
+				TheActualShipCostC = 0
+				TheActualShipCost = 0
+	            TheShippingTotal = 0
+				TheShippingDesc = ""
+				ShipType.Text = ""
+	        	ShippingTotal.Text = FormatCurrency(TheShippingTotal, 2)
+			Else
+				TheActualShipCostC = Session("ShipCostC")
+				TheActualShipCost = Session("ShipCost")
+	            TheShippingTotal = Session("ShippingTotal")
+				TheShippingDesc = Session("ShippingDesc")
+	       		If TheShippingCode <> 0 Then
+					ShippingTotal.Text = FormatCurrency(TheShippingTotal, 2)
+				Else
+					ShippingTotal.Text = "Shipping fee: $0.00"
+								
+				End If
+
+			End If
+		End If
+
+		'If NOT IsPostBack AND Session("ShippingCode") <> 0 Then
+			TheActualShipCostC = Session("ShipCostC")
+			TheActualShipCost = Session("ShipCost")
+            TheShippingTotal = Session("ShippingTotal")
+			TheShippingDesc = Session("ShippingDesc")
+			'ShipType.Text = Session("ShippingDesc")
+			'ShippingOptions.Text = Session("ShippingDesc")
+		'End If
+        If ShipCountry = "CA" Then
+			OrderTotal.Text = FormatCurrency(TheOrderTotal + TheShippingTotal + TheTotalGSTC + TheTotalPSTC, 2) & TheCurrency
+		Else        
+			OrderTotal.Text = FormatCurrency(TheOrderTotal + TheShippingTotal, 2) & TheCurrency
+		End If
+				
+        If Not IsPostBack Then
+            UserFirst.Text = ShipFName
+            UserLast.Text = ShipLName
+            UserEmail.Text = ShipEmail
+            UserAddress.Text = ShipAddress
+            UserCity.Text = ShipCity
+            UserState.Text = ShipState
+            UserCountry.Text = ShipCountry
+            UserZip.Text = ShipZip
+            UserPhone.Text = ShipPhone
+            UserFax.Text = ShipFax
+            BillCountry.Text = ShipCountry
+            BillFirst.Enabled = False
+            BillLast.Enabled = False
+            BillAddress.Enabled = False
+            BillCity.Enabled = False
+			'If ShipState = "HK" OR ShipState = "CN" Then
+				'BillCountryAlt.Enabled = False
+			'Else
+				BillCountry.Enabled = False
+			'End If'
+            BillZip.Enabled = False
+            BillPhone.Enabled = False
+            BillFax.Enabled = False
+
+            UserState.SelectedValue = ShipState
+
+			ErrorText.Visible = False
+
+			Select Case UserCountry.Text
+			
+				Case "US"
+					If Subtotal > FreeShippingAmount Then 
+						ShippingOptions.Items.Add(New ListItem("USA - Canada Post Expedited/Tracked Packet 4-8 business days - FREE","2,0,9.75"))
+					Else
+						If Session("InCAD") <> 0 Then
+							ShippingOptions.Items.Add(New ListItem("USA - Canada Post Expedited/Tracked Packet 4-8 business days - " & FormatCurrency(13 / Session("ExchangeCADUSD"),2) & " CAD ($13.00 USD)","2," & Math.Round(13 / Session("ExchangeCADUSD"),2) & ",9.75"))
+						Else
+							ShippingOptions.Items.Add(New ListItem("USA - Canada Post Expedited/Tracked Packet 4-8 business days - $13.00 USD","2,13,9.75"))
+						End If
+					End If
+					If Session("InCAD") <> 0 Then
+						ShippingOptions.Items.Add(New ListItem("USA - Canada Post XpressPost 3-5 business days incl. tracking - " & FormatCurrency(22 / Session("ExchangeCADUSD"),2) & " CAD ($22.00 USD)","45," & Math.Round(22 / Session("ExchangeCADUSD"),2) & ",14.53"))
+					Else
+						ShippingOptions.Items.Add(New ListItem("USA - Canada Post XpressPost 3-5 business days incl. tracking - $22.00 USD","45,22,14.53"))
+					End If
+				Case "CA"
+					If SubtotalC > FreeShippingAmount Then 
+						ShippingOptions.Items.Add(New ListItem("Canada Post Expedited/Tracked Packet 2-5 business days - FREE","27,0,9.75"))
+					Else
+						ShippingOptions.Items.Add(New ListItem("Canada Post Expedited/Tracked Packet 2-5 business days - $13.00 CAD","27,13,9.75"))
+					End If
+					ShippingOptions.Items.Add(New ListItem("Canada Post XpressPost 1-2 business days incl. tracking - $22.00 CAD","46,22,14.53"))
+						
+				
+				Case Else
+					If Subtotal > FreeShippingAmountInt Then 
+						ShippingOptions.Items.Add(New ListItem("INTERNATIONAL - XpressPost Canada Post 4-7  business days w/ trackng - FREE","23,0,25"))
+					Else
+						If Session("InCAD") <> 0 Then
+							ShippingOptions.Items.Add(New ListItem("INTERNATIONAL - XpressPost Canada Post 4-7  business days w/ trackng - " & FormatCurrency(49.50 / Session("ExchangeCADUSD"),2) & " CAD ($49.50 USD)","23," & Math.Round(49.50 / Session("ExchangeCADUSD"),2) & ",25"))
+						Else
+							ShippingOptions.Items.Add(New ListItem("INTERNATIONAL - XpressPost Canada Post 4-7  business days w/ trackng - $49.50 USD","23,49.5,25"))
+						End If
+					End If
+			End Select
+
+        End If		
+    End Sub
+</script>
+
+
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+   
+   	<title>Place Order | Bioevolve B12 Plus+ Cream</title>
+	<meta name="description" content="The page for customers to check their purchase and shipping information, also fill up billing">
+
+	<!-- Bootstrap -->
+	<link href="bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
+	<script src="js/jquery.min.js"></script>
+	<script src="bootstrap/dist/js/bootstrap.min.js"></script>
+
+	<!-- custom css -->
+	<link href="css/grid.css" type="text/css" rel="stylesheet">
+	<link href="css/main.css" type="text/css" rel="stylesheet">
+</head>
+
+<body>
+	<form runat="server">
+	    <asp:ScriptManager ID="ScriptManager1" runat="server"></asp:ScriptManager>
+
+	    <!--#include file="header.aspx"-->
+
+		<div class="grid shopping-cart" id="pageCheckout">
+	      	<asp:UpdatePanel ID="UpdatePanel1" runat="server">
+	            <ContentTemplate>
+					<div>
+						<div class="col-12of14">
+							<h5>Check OUT</h5>
+						</div>
+
+						<div class="col-12of14 form">
+							<h2>Shipping Info</h2>
+							<div class="input-wrapper">
+								<label><h3><asp:label id="LabelFirst" runat="server" Text="First Name"  /></h3></label>
+								<asp:textbox id="UserFirst" Columns="40" runat="server" maxlength="99" />
+							</div>
+							<div class="input-wrapper">
+								<label><h3><asp:label id="LabelLast" runat="server" Text="Last Name"/></h3></label>
+								<asp:textbox id="UserLast" Columns="40" runat="server" maxlength="99" />
+							</div>
+							<div class="input-wrapper">
+								<label><h3><asp:label id="LabelAddress" runat="server" Text="Address"/></h3></label>
+								<asp:textbox id="UserAddress" Columns="60" runat="server" maxlength="99" />
+							</div>
+							<div class="input-wrapper">
+								<label><h3><asp:label id="LabelCity" runat="server" Text="City"  /></h3></label>
+								<asp:textbox id="UserCity" Columns="60" runat="server" maxlength="99" />
+							</div>
+							<div class="input-wrapper">
+								<label><h3><asp:label id="LabelState" runat="server" Text="Province / State" /></h3></label>
+								<asp:DropDownList id="UserState" width="155" runat="server" >
+					                <asp:ListItem value="none" Text="Select a State..." />
+					                <asp:ListItem value="--" Text="Outside US/Canada" />
+					                <asp:ListItem value="AB" Text="Alberta" />
+					                <asp:ListItem value="BC" Text="British Columbia" />
+					                <asp:ListItem value="MB" Text="Manitoba" />
+					                <asp:ListItem value="NB" Text="New Brunswick" />
+					                <asp:ListItem value="NL" Text="Newfoundland/Labrador" />
+					                <asp:ListItem value="NS" Text="Nova Scotia" />
+					                <asp:ListItem value="NT" Text="Northwest Territories" />
+					                <asp:ListItem value="NU" Text="Nunavut" />
+					                <asp:ListItem value="ON" Text="Ontario" />
+					                <asp:ListItem value="PE" Text="Price Edward Island" />
+					                <asp:ListItem value="QC" Text="Quebec" />
+					                <asp:ListItem value="SK" Text="Saskatchewan" />
+					                <asp:ListItem value="YT" Text="Yukon" />
+					                <asp:ListItem value="AK" Text="AK-Alaska" />
+					                <asp:ListItem value="AL" Text="AL-Alabama" />
+					                <asp:ListItem value="AR" Text="AR-Arkansas" />
+					                <asp:ListItem value="AZ" Text="AZ-Arizona" />
+					                <asp:ListItem value="CA" Text="CA-California" />
+					                <asp:ListItem value="CO" Text="CO-Colorado" />
+					                <asp:ListItem value="CT" Text="CT-Connecticut" />
+					                <asp:ListItem value="DC" Text="DC-District of Columbia" />
+					                <asp:ListItem value="DE" Text="DE-Delaware" />
+					                <asp:ListItem value="FL" Text="FL-Florida" />
+					                <asp:ListItem value="GA" Text="GA-Georgia" />
+					                <asp:ListItem value="HI" Text="HI-Hawaii" />
+					                <asp:ListItem value="IA" Text="IA-Iowa" />
+					                <asp:ListItem value="ID" Text="ID-Idaho" />
+					                <asp:ListItem value="IL" Text="IL-Illinois" />
+					                <asp:ListItem value="IN" Text="IN-Indiana" />
+					                <asp:ListItem value="KS" Text="KS-Kansas" />
+					                <asp:ListItem value="KY" Text="KY-Kentucky" />
+					                <asp:ListItem value="LA" Text="LA-Louisiana" />
+					                <asp:ListItem value="MA" Text="MA-Massachusetts" />
+					                <asp:ListItem value="MD" Text="MD-Maryland" />
+					                <asp:ListItem value="ME" Text="ME-Maine" />
+					                <asp:ListItem value="MI" Text="MI-Michigan" />
+					                <asp:ListItem value="MN" Text="MN-Minnesota" />
+					                <asp:ListItem value="MO" Text="MO-Missouri" />
+					                <asp:ListItem value="MS" Text="MS-Mississippi" />
+					                <asp:ListItem value="MT" Text="MT-Montana" />
+					                <asp:ListItem value="NC" Text="NC-North Carolina" />
+					                <asp:ListItem value="ND" Text="ND-North Dakota" />
+					                <asp:ListItem value="NE" Text="NE-Nebraska" />
+					                <asp:ListItem value="NH" Text="NH-New Hampshire" />
+					                <asp:ListItem value="NV" Text="NV-Nevada" />
+					                <asp:ListItem value="NJ" Text="NJ-New Jersey" />
+					                <asp:ListItem value="NM" Text="NM-New Mexico" />
+					                <asp:ListItem value="NY" Text="NY-New York" />
+					                <asp:ListItem value="OH" Text="OH-Ohio" />
+					                <asp:ListItem value="OK" Text="OK-Oklahoma" />
+					                <asp:ListItem value="OR" Text="OR-Oregon" />
+					                <asp:ListItem value="PA" Text="PA-Pennsylvania" />
+					                <asp:ListItem value="RI" Text="RI-Rhode Island" />
+					                <asp:ListItem value="SC" Text="SC-South Carolina" />
+					                <asp:ListItem value="SD" Text="SD-South Dakota" />
+					                <asp:ListItem value="TN" Text="TN-Tennessee" />
+					                <asp:ListItem value="TX" Text="TX-Texas" />
+					                <asp:ListItem value="UT" Text="UT-Utah" />
+					                <asp:ListItem value="VA" Text="VA-Virginia" />
+					                <asp:ListItem value="VI" Text="VI-Virgin Islands" />
+					                <asp:ListItem value="VT" Text="VT-Vermont" />
+					                <asp:ListItem value="WA" Text="WA-Washington" />
+					                <asp:ListItem value="WI" Text="WI-Wisconsin" />
+					                <asp:ListItem value="WV" Text="WV-West Virginia" />
+					                <asp:ListItem value="WY" Text="WY-Wyoming" />
+				                </asp:DropDownList>
+				   			</div>
+							<div class="input-wrapper">
+								<label><h3><asp:label id="LabelZip" runat="server" Text="Postal/Zip Code" /></h3></label>
+								<asp:textbox id="UserZip" Columns="40" runat="server" maxlength="20" />
+							</div>
+							<div class="input-wrapper">
+								<label><h3><asp:label id="LabelCountry" runat="server" Text="Country" /></h3></label>
+								<asp:textbox id="UserCountry" Columns="60" runat="server" ReadOnly="True" />			</div>
+							<div class="input-wrapper">
+								<label><h3><asp:label id="LabelPhone" runat="server" Text="Phone" /></h3></label>
+								<asp:textbox id="UserPhone" Columns="20" runat="server" maxlength="99" />
+							</div>
+							<div class="input-wrapper">
+								<label><h3>Fax</h3></label>
+								<asp:textbox id="UserFax" Columns="20" runat="server"  maxlength="99" />
+							</div>
+							<div class="input-wrapper">
+								<label><h3><asp:label id="LabelEmail" runat="server" Text="Email"/></h3></label>
+								<asp:textbox id="UserEmail" Columns="60" runat="server" maxlength="99" />
+							</div>
+						</div>
+
+						<div class="col-12of14 form">
+							<h2>Billing Info</h2>
+					
+							<div class="input-wrapper">
+								<label><h3>Same as Shipping</h3></label>
+				                <asp:checkbox id="BillSame" Checked="True" runat="server" AutoPostBack="True" OnCheckedChanged="BillSame_OnCheckedChanged" />
+							</div>
+							<div class="input-wrapper">
+								<label><h3><asp:label id="BillLabelFirst" runat="server" Text="First Name"  /></h3></label>
+								<asp:textbox id="BillFirst" Columns="40" runat="server" maxlength="99" />
+							</div>
+							<div class="input-wrapper">
+								<label><h3><asp:label id="BillLabelLast" runat="server" Text="Last Name"/></h3></label>
+								<asp:textbox id="BillLast" Columns="40" runat="server" maxlength="99" />
+							</div>
+							<div class="input-wrapper">
+								<label><h3><asp:label id="BillLabelAddress" runat="server" Text="Address"/></h3></label>
+								<asp:textbox id="BillAddress" Columns="60" runat="server" maxlength="99" />
+							</div>
+							<div class="input-wrapper">
+								<label><h3><asp:label id="BillLabelCity" runat="server" Text="City"  /></h3></label>
+								<asp:textbox id="BillCity" Columns="60" runat="server" maxlength="99" />
+							</div>
+							<div class="input-wrapper">
+								<label><h3><asp:label id="BillLabelState" runat="server" Text="Province / State" /></h3></label>
+								<asp:DropDownList id="BillState" width="123" runat="server" >
+					                <asp:ListItem value="none" Text="Select a State..." />
+					                <asp:ListItem value="--" Text="Outside US/Canada" />
+					                <asp:ListItem value="AB" Text="Alberta" />
+					                <asp:ListItem value="BC" Text="British Columbia" />
+					                <asp:ListItem value="MB" Text="Manitoba" />
+					                <asp:ListItem value="NB" Text="New Brunswick" />
+					                <asp:ListItem value="NL" Text="Newfoundland/Labrador" />
+					                <asp:ListItem value="NS" Text="Nova Scotia" />
+					                <asp:ListItem value="NT" Text="Northwest Territories" />
+					                <asp:ListItem value="NU" Text="Nunavut" />
+					                <asp:ListItem value="ON" Text="Ontario" />
+					                <asp:ListItem value="PE" Text="Price Edward Island" />
+					                <asp:ListItem value="QC" Text="Quebec" />
+					                <asp:ListItem value="SK" Text="Saskatchewan" />
+					                <asp:ListItem value="YT" Text="Yukon" />
+					                <asp:ListItem value="AK" Text="AK-Alaska" />
+					                <asp:ListItem value="AL" Text="AL-Alabama" />
+					                <asp:ListItem value="AR" Text="AR-Arkansas" />
+					                <asp:ListItem value="AZ" Text="AZ-Arizona" />
+					                <asp:ListItem value="CA" Text="CA-California" />
+					                <asp:ListItem value="CO" Text="CO-Colorado" />
+					                <asp:ListItem value="CT" Text="CT-Connecticut" />
+					                <asp:ListItem value="DC" Text="DC-District of Columbia" />
+					                <asp:ListItem value="DE" Text="DE-Delaware" />
+					                <asp:ListItem value="FL" Text="FL-Florida" />
+					                <asp:ListItem value="GA" Text="GA-Georgia" />
+					                <asp:ListItem value="HI" Text="HI-Hawaii" />
+					                <asp:ListItem value="IA" Text="IA-Iowa" />
+					                <asp:ListItem value="ID" Text="ID-Idaho" />
+					                <asp:ListItem value="IL" Text="IL-Illinois" />
+					                <asp:ListItem value="IN" Text="IN-Indiana" />
+					                <asp:ListItem value="KS" Text="KS-Kansas" />
+					                <asp:ListItem value="KY" Text="KY-Kentucky" />
+					                <asp:ListItem value="LA" Text="LA-Louisiana" />
+					                <asp:ListItem value="MA" Text="MA-Massachusetts" />
+					                <asp:ListItem value="MD" Text="MD-Maryland" />
+					                <asp:ListItem value="ME" Text="ME-Maine" />
+					                <asp:ListItem value="MI" Text="MI-Michigan" />
+					                <asp:ListItem value="MN" Text="MN-Minnesota" />
+					                <asp:ListItem value="MO" Text="MO-Missouri" />
+					                <asp:ListItem value="MS" Text="MS-Mississippi" />
+					                <asp:ListItem value="MT" Text="MT-Montana" />
+					                <asp:ListItem value="NC" Text="NC-North Carolina" />
+					                <asp:ListItem value="ND" Text="ND-North Dakota" />
+					                <asp:ListItem value="NE" Text="NE-Nebraska" />
+					                <asp:ListItem value="NH" Text="NH-New Hampshire" />
+					                <asp:ListItem value="NV" Text="NV-Nevada" />
+					                <asp:ListItem value="NJ" Text="NJ-New Jersey" />
+					                <asp:ListItem value="NM" Text="NM-New Mexico" />
+					                <asp:ListItem value="NY" Text="NY-New York" />
+					                <asp:ListItem value="OH" Text="OH-Ohio" />
+					                <asp:ListItem value="OK" Text="OK-Oklahoma" />
+					                <asp:ListItem value="OR" Text="OR-Oregon" />
+					                <asp:ListItem value="PA" Text="PA-Pennsylvania" />
+					                <asp:ListItem value="RI" Text="RI-Rhode Island" />
+					                <asp:ListItem value="SC" Text="SC-South Carolina" />
+					                <asp:ListItem value="SD" Text="SD-South Dakota" />
+					                <asp:ListItem value="TN" Text="TN-Tennessee" />
+					                <asp:ListItem value="TX" Text="TX-Texas" />
+					                <asp:ListItem value="UT" Text="UT-Utah" />
+					                <asp:ListItem value="VA" Text="VA-Virginia" />
+					                <asp:ListItem value="VI" Text="VI-Virgin Islands" />
+					                <asp:ListItem value="VT" Text="VT-Vermont" />
+					                <asp:ListItem value="WA" Text="WA-Washington" />
+					                <asp:ListItem value="WI" Text="WI-Wisconsin" />
+					                <asp:ListItem value="WV" Text="WV-West Virginia" />
+					                <asp:ListItem value="WY" Text="WY-Wyoming" />
+				                </asp:DropDownList>
+				   			</div>
+							<div class="input-wrapper">
+								<label><h3><asp:label id="BillLabelZip" runat="server" Text="Postal/Zip Code" /></h3></label>
+								<asp:textbox id="BillZip" Columns="40" runat="server" maxlength="20" />
+							</div>
+							<div class="input-wrapper">
+								<label><h3><asp:label id="BillLabelCountry" runat="server" Text="Country" /></h3></label>
+								<asp:textbox id="BillCountry" Columns="60" runat="server" ReadOnly="True" />			</div>
+							<div class="input-wrapper">
+								<label><h3><asp:label id="BillLabelPhone" runat="server" Text="Phone" /></h3></label>
+								<asp:textbox id="BillPhone" Columns="20" runat="server" maxlength="99" />
+							</div>
+							<div class="input-wrapper">
+								<label><h3>Fax</h3></label>
+								<asp:textbox id="BillFax" Columns="20" runat="server"  maxlength="99" />
+							</div>
+						</div>
+
+						<div class="col-12of14 form">
+							<h2>Payment Method</h2>
+							<p>Select Your Payment Type</p>
+							<div class="input-wrapper">
+								<label><h3><asp:label id="LabelCCType" runat="server" Text="Type" /></h3></label>
+								<asp:DropDownList id="CreditCardType" width="150" runat="server" onSelectedIndexChanged="CheckCCType" AutoPostBack="true">
+					                <asp:ListItem Selected="True" Value="none" Text="Choose Type"/>
+					                <asp:ListItem Value="Visa" Text="Visa"/>
+					                <asp:ListItem Value="MasterCard" Text="MasterCard"/>
+					                <asp:ListItem Value="PayPal" Text="PayPal"/>
+				                </asp:DropDownList>			
+				            </div>
+							<div id="CC1" runat="server" class="input-wrapper">
+								<label><h3><asp:label id="LabelCCName" runat="server" Text="Name" /></h3></label>
+								<asp:TextBox ID="CreditCardName" Columns="40" runat="server" maxlength="49" />
+							</div>
+							<div id="CC2" runat="server" class="input-wrapper">
+								<label><h3><asp:label id="LabelCCNumber"  runat="server" Text="Number" /></h3></label>
+								<asp:TextBox ID="CreditCardNumber" Columns="40" width="200" runat="server" maxlength="25" /> 
+							</div>
+							<div id="CC3" runat="server" class="input-wrapper">
+								<label><h3><asp:label id="LabelCCExpiry" runat="server" Text="Expiry" /></h3></label>
+								<asp:DropDownList id="CreditCardExpMonth" width="80" runat="server" >
+				                <asp:ListItem Selected="True" Value="none" Text="Month"/>
+					                <asp:ListItem Value="01" Text="01"/>
+					                <asp:ListItem Value="02" Text="02"/>
+					                <asp:ListItem Value="03" Text="03"/>
+					                <asp:ListItem Value="04" Text="04"/>
+					                <asp:ListItem Value="05" Text="05"/>
+					                <asp:ListItem Value="06" Text="06"/>
+					                <asp:ListItem Value="07" Text="07"/>
+					                <asp:ListItem Value="08" Text="08"/>
+					                <asp:ListItem Value="09" Text="09"/>
+					                <asp:ListItem Value="10" Text="10"/>
+					                <asp:ListItem Value="11" Text="11"/>
+					                <asp:ListItem Value="12" Text="12"/>
+					                </asp:DropDownList> 
+								/
+								<asp:DropDownList id="CreditCardExpYear" width="80" runat="server" >
+				                <asp:ListItem Selected="True" Value="none" Text="Year"/>
+					                <asp:ListItem Value="15" Text="15"/>
+					                <asp:ListItem Value="16" Text="16"/>
+					                <asp:ListItem Value="17" Text="17"/>
+					                <asp:ListItem Value="18" Text="18"/>
+					                <asp:ListItem Value="19" Text="19"/>
+					                <asp:ListItem Value="20" Text="20"/>
+					                <asp:ListItem Value="21" Text="21"/>
+					                <asp:ListItem Value="22" Text="22"/>
+					                <asp:ListItem Value="23" Text="23"/>
+					                <asp:ListItem Value="24" Text="24"/>
+					                <asp:ListItem Value="25" Text="25"/>
+					                <asp:ListItem Value="26" Text="26"/>
+					                <asp:ListItem Value="27" Text="27"/>
+					                <asp:ListItem Value="28" Text="28"/>
+					                <asp:ListItem Value="29" Text="29"/>
+					                <asp:ListItem Value="30" Text="30"/>
+				                </asp:DropDownList>
+				   			</div>
+							<div id="CC4" runat="server" class="input-wrapper">
+								<label><h3><asp:label id="LabelCCCVV" runat="server" Text="Security Code" /></h3></label>
+								<asp:TextBox ID="CreditCardCVV" Columns="4"  runat="server" maxlength="4" /> Where is my security code?
+								<img class="security-code" src="img/security_code_01.jpg" alt="" title="visa card security code location">
+								<img class="security-code" src="img/security_code_02.jpg" alt="" title="express card security code location">
+							</div>
+						</div>
+					</div>
+				</ContentTemplate>
+			    <Triggers>
+			        <asp:AsyncPostBackTrigger ControlID="OrderNowButton" />
+			    </Triggers>
+			</asp:UpdatePanel>
+
+			<div class="col-12of14 form">
+				<h2>Shipping Method</h2>
+	  			<asp:UpdatePanel ID="UpdatePanel2" runat="server">
+		        	<ContentTemplate>
+					<div class="input-wrapper">
+						<label><h3><asp:label id="LabelShippingOptions" runat="server" Text="Select your shipping type" /></h3></label>
+						<asp:DropDownList id="ShippingOptions" AutoPostBack="True" onSelectedIndexChanged="ShippingOptions_Changed" runat="server" >
+							<asp:ListItem value="0,0,0" Text="Select a shipping type..." />
+						</asp:DropDownList>
+					</div>
+
+					</ContentTemplate>
+				    <Triggers>
+				        <asp:AsyncPostBackTrigger ControlID="OrderNowButton" />
+				    </Triggers>
+				</asp:UpdatePanel>
+			</div>
+
+			<div class="col-12of14 cart">
+				<h2>Order Details / Item Descriptions</h2>
+				
+				<div class="col-9of12 cart-header c1">
+					<h3>Item</h3>
+				</div>
+				<div class="col-3of12 cart-header">
+					<h3>Item Total</h3>
+				</div>
+				<% 
+					If NumRows > 0 Then
+					For III = 0 To NumRows - 1
+				%>																			
+				
+					<div class="col-9of12 cart-body c1">
+						<p><strong><%=  TheQuantity(III) & " " & TheDesc(III) %></strong></p>
+					</div>
+					<div class="col-3of12 cart-body">
+						<p><strong><%= FormatCurrency(ThePrice(III) * TheQuantity(III),2) %></strong></p>
+					</div>
+				<% 
+					Next					
+					End If
+				%>
+				<asp:UpdatePanel ID="UpdatePanel3" runat="server">
+				    <ContentTemplate>
+					   	<div>
+						    <div class="col-12of12 fee">
+								<h3><asp:Label id="ShipType" runat="server"/> <span><asp:Label id="ShippingTotal" runat="server"/></span></h3>
+							</div>	
+							<div id="GSTDiv" runat="server" class="col-12of12 fee">
+								<h3>GST/HST: <span><asp:Label id="GSTTotal" runat="server"/></span></h3>
+							</div>
+							<div id="PSTDiv" runat="server" class="col-12of12 fee">
+								<h3>PST: <span><asp:Label id="PSTTotal" runat="server"/></span></h3>
+							</div>
+
+							<div class="right fee" id="total">
+								<h3>Grand Total: </h3><h1><asp:Label id="OrderTotal" runat="server" /></h1>
+							</div>
+				   		</div>
+					</ContentTemplate>
+					<Triggers>
+					<asp:AsyncPostBackTrigger ControlID="OrderNowButton" />
+					</Triggers>
+				</asp:UpdatePanel>
+	            
+			</div>
+
+		
+	      	<asp:UpdatePanel ID="UpdatePanel4" runat="server">
+	            <ContentTemplate>
+					<div class="col-12of14">
+						<div class="col-10of12 right fee">
+							<div id="ErrorText" runat="server"><h3 class="red"><%= TheError %></h3></div>&nbsp;
+						</div>
+						<div class="col-12of12 right">
+							<asp:LinkButton id="OrderNowButton" runat="server" CssClass="buy right" onClick="OrderNowButton_Click" >Place Order</asp:LinkButton>
+
+			                <h6>Pressing the "Place Order" button will process your order an empty your cart. If you selected PayPal as the payment type, you will be then be taken to PayPal to finalize your payment. You will not be able to come back to this page.</h6>
+						</div>
+					</div>
+				</ContentTemplate>
+			    <Triggers>
+			        <asp:AsyncPostBackTrigger ControlID="OrderNowButton" />
+			    </Triggers>
+			</asp:UpdatePanel>
+	        
+		</div>
+
+
+		<!--#include file="footer.aspx"-->
+		
+	</form>
+
+
+
+<script src="js/ios_doubleTap_disable.js"></script>
+</body>
+</html>

@@ -1,0 +1,839 @@
+<%@ Page Language="VB" %>
+<%@ Import Namespace = "System.Data.SqlClient" %>
+<!DOCTYPE html>
+<!--#include file="/conn/conn.aspx"-->
+<script language="VB" runat="server">
+	Public TheError As String
+	Public TempSql As String
+	'Public ThePatientRelease As String
+
+	Protected Function SqlEnc(ByVal a As String) As String
+	
+		Dim TempS As String = ""
+		
+		If NOT a is DBNull.Value Then
+			TempS = Trim(Replace(a,"'","''"))
+			TempS = Replace(TempS,vbCrLf,"")
+		End If
+		Return TempS
+	End Function
+
+	Protected Overrides Sub OnError(ByVal e as System.EventArgs) 
+		Response.Redirect("http://www.b12cream.com/index.aspx")
+	End Sub
+
+    Protected Function GeneratePassword() As String
+		Dim II As Integer
+		Dim ThePassword As String = ""
+		Dim ThisOne As Integer
+        Dim RandomClass As New Random()
+		Dim TempChar As Integer
+		
+		For II = 1 To 10
+			ThisOne = RandomClass.Next(1, 4)
+			Select Case ThisOne
+				Case 2
+					ThePassword = ThePassword & Chr(RandomClass.Next(50,57))
+				Case Else
+					TempChar = RandomClass.Next(65,90)
+					If TempChar = 73 Then
+						TempChar = TempChar - RandomClass.Next(1,7)
+					Else
+						If TempChar = 79 Then
+							TempChar = TempChar + RandomClass.Next(1,10)
+						End If
+					End If
+					ThePassword = ThePassword & Chr(TempChar)
+			End Select
+		Next
+		
+		Return ThePassword		
+	End Function
+    
+    Protected Function ValidateEmail(ByVal a As String) As Boolean
+        
+        If InStr(a, "@") < 3 And InStr(a, ".") < 4 Then
+            Return False
+        Else
+            Return True
+        End If  
+    End Function
+
+
+ 	Protected Sub UserSubmit_Click(ByVal sender As Object, ByVal e As System.EventArgs)
+		Dim AnyErrors As Boolean = False
+		Dim EmailError As Boolean = False
+		Dim ClientExists As Boolean = False
+		
+		UserSubmit.Enabled = False
+
+		If UserFirst.Text = "" Then
+            LabelFirst.CssClass = "ErrorRedLabel"
+			AnyErrors = True
+		Else
+			LabelFirst.CssClass = "ErrorNormalLabel"
+		End If
+
+		If UserLast.Text = "" Then
+			LabelLast.CssClass = "ErrorRedLabel"
+			AnyErrors = True
+		Else
+			LabelLast.CssClass = "ErrorNormalLabel"
+		End If
+
+		If UserEmail.Text = "" Then
+			LabelEmail.CssClass = "ErrorRedLabel"
+			AnyErrors = True
+		Else
+			If ValidateEmail(UserEmail.Text) Then 
+				LabelEmail.CssClass = "ErrorNormalLabel"
+			Else
+			LabelEmail.CssClass = "ErrorRedLabel"
+			EmailError = True
+			End If
+		End If
+
+		If UserAddress.Text = "" Then
+			LabelAddress.CssClass = "ErrorRedLabel"
+			AnyErrors = True
+		Else
+			LabelAddress.CssClass = "ErrorNormalLabel"
+		End If
+		
+		If UserCity.Text = "" Then
+			LabelCity.CssClass = "ErrorRedLabel"
+			AnyErrors = True
+		Else
+			LabelCity.CssClass = "ErrorNormalLabel"
+		End If
+
+			If UserState.SelectedItem.Value = "none" Then
+                    LabelState.CssClass = "ErrorRedLabel"
+				AnyErrors = True
+			Else
+                    LabelState.CssClass = "ErrorNormalLabel"
+			End If
+                If UserCountry.SelectedItem.Value = "none" Then
+                    LabelCountry.CssClass = "ErrorRedLabel"
+                    AnyErrors = True
+                Else
+                    LabelCountry.CssClass = "ErrorNormalLabel"
+                End If
+			
+		If UserZip.Text = "" Then
+			LabelZip.CssClass = "ErrorRedLabel"
+			AnyErrors = True
+		Else
+			LabelZip.CssClass = "ErrorNormalLabel"
+		End If
+		
+		If UserPhone.Text = "" Then
+			LabelPhone.CssClass = "ErrorRedLabel"
+			AnyErrors = True
+		Else
+			LabelPhone.CssClass = "ErrorNormalLabel"
+		End If
+
+		If AnyErrors Or EmailError Then 
+			UserSubmit.Enabled = True
+			ErrorText.Visible = True
+			If AnyErrors Then
+				TheError = "There is missing information."
+			End If
+			If EmailError Then
+				TheError = TheError & " Email address is invalid."
+			End If
+		Else
+		'check for existing client
+        Dim connA As New SqlConnection(ConnString)
+        Dim drA As SqlDataReader
+        Dim sqlA As New SqlCommand
+
+		connA.Open()
+        sqlA = New SqlCommand("SELECT ClientID, ShipFName,OrdersPlaced FROM Clients WHERE ShipEmail='" & SqlEnc(UserEmail.Text) & "'", connA)
+		drA = sqlA.ExecuteReader()
+		If drA.Read Then
+			If NOT IsDBNull(drA("ShipFName")) Then
+			 	If  drA("OrdersPlaced") > 0 Then
+					ErrorText.Visible = True
+					UserSubmit.Enabled = True
+					TheError = "That email address already exists in our system. <br /><a href=""http://www.b12cream.com/forgot.aspx"">Click here to request your password.</a>"
+					drA.Close
+					connA.Close
+					drA = nothing
+					connA = nothing
+					Exit Sub
+				Else
+					ClientExists = True
+					Session("ClientID") = drA("ClientID")
+				End If
+			End If	
+
+		End If
+		drA.Close
+		'create new client
+		If NOT ClientExists Then
+			Dim RandomClass As New Random()
+			Dim TempStr As String
+			TempStr = CStr(RandomClass.Next(100000000, 999999999)) & Request.ServerVariables("REMOTE_ADDR") & Now & CStr(RandomClass.Next(100000000, 999999999))
+	        sqlA = New SqlCommand("INSERT INTO [Clients] ([Temp],[Date]) VALUES ('" & TempStr & "','" & Now & "')", connA)
+			sqlA.ExecuteNonQuery
+
+	        sqlA = New SqlCommand("SELECT ClientID FROM [Clients] WHERE [Temp] = ('"& TempStr &"')", connA)			
+			drA = sqlA.ExecuteReader()
+			If drA.Read Then
+				Session("ClientID") = drA("ClientID")
+			Else
+				Session("ClientID") = 0
+			End If
+			drA.Close
+		End If
+			drA = nothing
+			
+			Dim ReferredBy As String = "0"
+			'Dim ReferredType As String = "None"
+			'If UserReferral.Text <> "" Then
+				'If Left(UserReferral.Text,1) = "A" Then
+					'ReferredBy = CInt(Right(UserReferral.Text,Len(UserReferral.Text)-1))
+					'ReferredType = "Affiliate"
+				'Else
+					'ReferredBy = CInt(UserReferral.Text)
+					'ReferredType = "Client"				
+				'End If
+			'End If
+			'If ReferredBy < 0 Then 
+				'ReferredBy = 0
+				'ReferredType = "None"
+			'End If
+			Dim TheShipState As String
+			Dim TheShipCountry As String
+					TheShipState = UserState.SelectedItem.Value
+					TheShipCountry = UserCountry.SelectedItem.Value
+			If UserReferral.Text <> "" Then 
+				ReferredBy = UserReferral.Text
+			End If
+			If Session("Affiliate") <> "" Then
+				ReferredBy = Session("Affiliate")			
+			End If
+			TempSql = "UPDATE Clients SET Agreed=1,ShipFName='" & SqlEnc(UserFirst.Text) & "',ShipEmail='" & SqlEnc(UserEmail.Text) &  "',ShipLName='" & SqlEnc(UserLast.Text) & "',ShipAddress='" & SqlEnc(UserAddress.Text) & "',ShipCity='" & SqlEnc(UserCity.Text) & "',ShipState='" & SqlEnc(TheShipState) & "',ShipCountry='" & SqlEnc(TheShipCountry) & "',ShipZip='" & SqlEnc(UserZip.Text)  & "',ShipPhone='" & SqlEnc(UserPhone.Text) & "',Referer='" & SqlEnc(Session("Referer")) & "',Site=" & Session("TheCurrentSite") & ",Password='" & GeneratePassword() & "',LastIP='" & Request.ServerVariables("REMOTE_ADDR") & "',Engine='" & SqlEnc(Session("SearchEngine")) & "',ReferredBy='" & SqlEnc(ReferredBy) & "'"
+			If UserFax.Text <> "" Then
+				TempSql = TempSql & ",ShipFax='" & SqlEnc(UserFax.Text) & "'"
+			End If
+			TempSql = TempSql & " WHERE ClientID=" & Session("ClientID")
+
+			sqlA = New SqlCommand(TempSql,connA)
+			sqlA.ExecuteNonQuery
+			sqlA = nothing
+			connA.Close
+			connA = nothing
+			Response.Cookies("BioSense")("Username") = UserEmail.Text
+			Response.Cookies("BioSense").Expires = Now.AddDays(180)
+			Session("ClientName") = UserFirst.Text
+			Response.Redirect("04_checkout.aspx")
+
+		End If
+	End Sub
+
+	Sub Page_Load()
+
+
+		If Session("OrderID") = 0 Then 
+			Response.Redirect("http://www.b12cream.com/04_cart.aspx")
+		End If
+
+ 
+        Dim conn As New SqlConnection(ConnString)
+        Dim dr As SqlDataReader
+        Dim sql As New SqlCommand
+
+		conn.Open()
+		'Start check cart for items
+        sql = New SqlCommand("SELECT COUNT(*) As NumRows From TempItem WHERE OrderID=" & Session("OrderID"), conn)
+		dr = sql.ExecuteReader()
+		If dr.Read Then
+			If NOT IsDBNull(dr("NumRows")) Then
+				If CInt(dr("NumRows")) < 1 Then 
+					dr.close
+					Conn.Close
+					dr=nothing
+					conn = nothing
+					Response.Redirect("04_cart.aspx")
+				End If
+			Else
+				dr.close
+				Conn.Close
+				dr=nothing
+				conn = nothing
+				Response.Redirect("04_cart.aspx")				
+			End If
+		Else
+			dr.close
+			Conn.Close
+			dr=nothing
+			conn = nothing
+			Response.Redirect("04_cart.aspx")
+
+
+		End If    
+		'End check cart for items
+
+		If Session("ClientID") > 0 Then 
+			conn.Close
+			conn = nothing
+			Response.Redirect("04_checkout.aspx")
+		End If
+
+
+		'ThePatientRelease = "patientrelease.aspx"
+
+		If NOT IsPostBack Then
+			ErrorText.Visible = False
+		End If
+
+		'Dim IPAddr As String = Request.ServerVariables("REMOTE_ADDR")
+		'Dim FullURL As String = "biosenseclinical.com" & Request.ServerVariables("URL") & "?" & Request.ServerVariables("QUERY_STRING")
+		'Dim UserAgent As String = Request.ServerVariables("HTTP_USER_AGENT")
+		'Dim TSql As String  = "INSERT INTO WebLogs ([Date],[Referer],[IP],[URL],[UserAgent],[NewSession],[Engine],[Country]) VALUES ('" & Now & "','" & SqlEnc(Session("Referer")) & "','" & IPAddr & "','" & SqlEnc(FullURL) & "','" & SqlEnc(UserAgent) & "'," & Session("NewSession") & ",'" & Session("SearchEngine") & "','" & Session("Country") & "')"
+		'sql = New SqlCommand(TSql, conn)
+		'sql.ExecuteNonQuery()
+		'Session("NewSession") = 0
+		conn.Close()	
+	End Sub
+</script>
+
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+   
+   	<title>Check Out | Bioevolve B12 Plus+ Cream</title>
+	<meta name="description" content="The page for customers to fill their accounts and shipping information">
+
+	<!-- Bootstrap -->
+	<link href="bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
+	<script src="js/jquery.min.js"></script>
+	<script src="bootstrap/dist/js/bootstrap.min.js"></script>
+
+	<!-- custom css -->
+	<link href="css/grid.css" type="text/css" rel="stylesheet">
+	<link href="css/main.css" type="text/css" rel="stylesheet">
+</head>
+
+<body>
+	<form runat="server">
+	 	<!--#include file="header.aspx"-->
+
+		<div class="grid shopping-cart" id="pageCheckout">
+			<div class="col-12of14">
+				<h5>Check Out</h5>
+			</div>
+
+			<div class="col-12of14 log-in">
+				<h1>Returning Customer?</h1>
+				<a class="buy" href="06_returning.aspx">Log In</a>
+			</div>
+
+			<div class="col-12of14 form">
+				<h1>New Customer</h1>
+				<h2>Shipping Info</h2>
+				<p>Please enter your shipping information below. You will be asked for the billing information in the next step if it is different from your shipping information.</p>
+				<div id="ErrorText" runat="server"><h3 class="err-msg"><%= TheError %></h3></div>
+				<div class="input-wrapper">
+					<label><h3><asp:label id="LabelFirst" runat="server" Text="First Name"  /></h3></label>
+					<asp:textbox id="UserFirst" Columns="40" runat="server" maxlength="99" />
+				</div>
+				<div class="input-wrapper">
+					<label><h3><asp:label id="LabelLast" runat="server" Text="Last Name"/></h3></label>
+					<asp:textbox id="UserLast" Columns="40" runat="server" maxlength="99" />
+				</div>
+				<div class="input-wrapper">
+					<label><h3><asp:label id="LabelAddress" runat="server" Text="Address"/></h3></label>
+					<asp:textbox id="UserAddress" Columns="60" runat="server" maxlength="99" />
+				</div>
+				<div class="input-wrapper">
+					<label><h3><asp:label id="LabelCity" runat="server" Text="City"  /></h3></label>
+					<asp:textbox id="UserCity" Columns="60" runat="server" maxlength="99" />
+				</div>
+				<div class="input-wrapper">
+					<label><h3><asp:label id="LabelState" runat="server" Text="Province / State" /></h3></label>
+					<asp:DropDownList id="UserState" width="124" runat="server" >
+		                <asp:ListItem value="none" Text="Select a State..." />
+		                <asp:ListItem value="--" Text="Outside US/Canada" />
+		                <asp:ListItem value="AB" Text="Alberta" />
+		                <asp:ListItem value="BC" Text="British Columbia" />
+		                <asp:ListItem value="MB" Text="Manitoba" />
+		                <asp:ListItem value="NB" Text="New Brunswick" />
+		                <asp:ListItem value="NL" Text="Newfoundland/Labrador" />
+		                <asp:ListItem value="NS" Text="Nova Scotia" />
+		                <asp:ListItem value="NT" Text="Northwest Territories" />
+		                <asp:ListItem value="NU" Text="Nunavut" />
+		                <asp:ListItem value="ON" Text="Ontario" />
+		                <asp:ListItem value="PE" Text="Price Edward Island" />
+		                <asp:ListItem value="QC" Text="Quebec" />
+		                <asp:ListItem value="SK" Text="Saskatchewan" />
+		                <asp:ListItem value="YT" Text="Yukon" />
+		                <asp:ListItem value="AK" Text="AK-Alaska" />
+		                <asp:ListItem value="AL" Text="AL-Alabama" />
+		                <asp:ListItem value="AR" Text="AR-Arkansas" />
+		                <asp:ListItem value="AZ" Text="AZ-Arizona" />
+		                <asp:ListItem value="CA" Text="CA-California" />
+		                <asp:ListItem value="CO" Text="CO-Colorado" />
+		                <asp:ListItem value="CT" Text="CT-Connecticut" />
+		                <asp:ListItem value="DC" Text="DC-District of Columbia" />
+		                <asp:ListItem value="DE" Text="DE-Delaware" />
+		                <asp:ListItem value="FL" Text="FL-Florida" />
+		                <asp:ListItem value="GA" Text="GA-Georgia" />
+		                <asp:ListItem value="HI" Text="HI-Hawaii" />
+		                <asp:ListItem value="IA" Text="IA-Iowa" />
+		                <asp:ListItem value="ID" Text="ID-Idaho" />
+		                <asp:ListItem value="IL" Text="IL-Illinois" />
+		                <asp:ListItem value="IN" Text="IN-Indiana" />
+		                <asp:ListItem value="KS" Text="KS-Kansas" />
+		                <asp:ListItem value="KY" Text="KY-Kentucky" />
+		                <asp:ListItem value="LA" Text="LA-Louisiana" />
+		                <asp:ListItem value="MA" Text="MA-Massachusetts" />
+		                <asp:ListItem value="MD" Text="MD-Maryland" />
+		                <asp:ListItem value="ME" Text="ME-Maine" />
+		                <asp:ListItem value="MI" Text="MI-Michigan" />
+		                <asp:ListItem value="MN" Text="MN-Minnesota" />
+		                <asp:ListItem value="MO" Text="MO-Missouri" />
+		                <asp:ListItem value="MS" Text="MS-Mississippi" />
+		                <asp:ListItem value="MT" Text="MT-Montana" />
+		                <asp:ListItem value="NC" Text="NC-North Carolina" />
+		                <asp:ListItem value="ND" Text="ND-North Dakota" />
+		                <asp:ListItem value="NE" Text="NE-Nebraska" />
+		                <asp:ListItem value="NH" Text="NH-New Hampshire" />
+		                <asp:ListItem value="NV" Text="NV-Nevada" />
+		                <asp:ListItem value="NJ" Text="NJ-New Jersey" />
+		                <asp:ListItem value="NM" Text="NM-New Mexico" />
+		                <asp:ListItem value="NY" Text="NY-New York" />
+		                <asp:ListItem value="OH" Text="OH-Ohio" />
+		                <asp:ListItem value="OK" Text="OK-Oklahoma" />
+		                <asp:ListItem value="OR" Text="OR-Oregon" />
+		                <asp:ListItem value="PA" Text="PA-Pennsylvania" />
+		                <asp:ListItem value="RI" Text="RI-Rhode Island" />
+		                <asp:ListItem value="SC" Text="SC-South Carolina" />
+		                <asp:ListItem value="SD" Text="SD-South Dakota" />
+		                <asp:ListItem value="TN" Text="TN-Tennessee" />
+		                <asp:ListItem value="TX" Text="TX-Texas" />
+		                <asp:ListItem value="UT" Text="UT-Utah" />
+		                <asp:ListItem value="VA" Text="VA-Virginia" />
+		                <asp:ListItem value="VI" Text="VI-Virgin Islands" />
+		                <asp:ListItem value="VT" Text="VT-Vermont" />
+		                <asp:ListItem value="WA" Text="WA-Washington" />
+		                <asp:ListItem value="WI" Text="WI-Wisconsin" />
+		                <asp:ListItem value="WV" Text="WV-West Virginia" />
+		                <asp:ListItem value="WY" Text="WY-Wyoming" />
+	                </asp:DropDownList>
+	   			</div>
+				<div class="input-wrapper">
+					<label><h3><asp:label id="LabelZip" runat="server" Text="Postal/Zip Code" /></h3></label>
+					<asp:textbox id="UserZip" Columns="40" runat="server" maxlength="20" />
+				</div>
+				<div class="input-wrapper">
+					<label><h3><asp:label id="LabelCountry" runat="server" Text="Country" /></h3></label>
+					<asp:DropDownList id="UserCountry" width="147" runat="server" >
+		                <asp:ListItem Selected="True" Value="none" Text="Select a Country..."/>
+		                <asp:ListItem value="CA" Text="Canada" />
+		                <asp:ListItem value="US" Text="United States" />
+		                <asp:ListItem value="PG" Text="Admiralty Islands" />
+		                <asp:ListItem value="FI" Text="Aland Islands" />
+		                <asp:ListItem value="AL" Text="Albania" />
+		                <asp:ListItem value="NC" Text="Alofi Islands" />
+		                <asp:ListItem value="AS" Text="American Samoa" />
+		                <asp:ListItem value="IN" Text="Andaman Islands" />
+		                <asp:ListItem value="FR" Text="Andorra" />
+		                <asp:ListItem value="AI" Text="Anguilla" />
+		                <asp:ListItem value="AG" Text="Antigua &amp; Barbuda" />
+		                <asp:ListItem value="AR" Text="Argentina" />
+		                <asp:ListItem value="AW" Text="Aruba" />
+		                <asp:ListItem value="SH" Text="Ascension" />
+		                <asp:ListItem value="AU" Text="Australia" />
+		                <asp:ListItem value="AT" Text="Austria" />
+		                <asp:ListItem value="PT" Text="Azores" />
+		                <asp:ListItem value="BS" Text="Bahamas" />
+		                <asp:ListItem value="BH" Text="Bahrain" />
+		                <asp:ListItem value="ES" Text="Balearic Islands" />
+		                <asp:ListItem value="ID" Text="Bali" />
+		                <asp:ListItem value="BD" Text="Bangladesh" />
+		                <asp:ListItem value="ID" Text="Banka" />
+		                <asp:ListItem value="VU" Text="Banks Islands" />
+		                <asp:ListItem value="BB" Text="Barbados" />
+		                <asp:ListItem value="BY" Text="Belarus" />
+		                <asp:ListItem value="BE" Text="Belgium" />
+		                <asp:ListItem value="BZ" Text="Belize" />
+		                <asp:ListItem value="BT" Text="Bhutan" />
+		                <asp:ListItem value="ID" Text="Billiton Island" />
+		                <asp:ListItem value="PG" Text="Bismark Archipelago" />
+		                <asp:ListItem value="BO" Text="Bolivia" />
+		                <asp:ListItem value="AN" Text="Bonaire" />
+		                <asp:ListItem value="ZA" Text="Bophuthatswana" />
+		                <asp:ListItem value="BA" Text="Bosnia &amp; Herzegovina" />
+		                <asp:ListItem value="BR" Text="Brazil" />
+		                <asp:ListItem value="BN" Text="Brunei Darussalam" />
+		                <asp:ListItem value="BG" Text="Bulgaria" />
+		                <asp:ListItem value="MM" Text="Burma" />
+		                <asp:ListItem value="KH" Text="Cambodia" />
+		                <asp:ListItem value="ES" Text="Canary Islands" />
+		                <asp:ListItem value="KY" Text="Cayman Islands" />
+		                <asp:ListItem value="ID" Text="Celebes" />
+		                <asp:ListItem value="ES" Text="Ceuta" />
+		                <asp:ListItem value="ES" Text="Chafarinas" />
+		                <asp:ListItem value="GB" Text="Channel Islands" />
+		                <asp:ListItem value="CL" Text="Chile" />
+		                <asp:ListItem value="CN" Text="China" />
+		                <asp:ListItem value="AU" Text="Christmas Islands" />
+		                <asp:ListItem value="ZA" Text="Ciskei" />
+		                <asp:ListItem value="MO" Text="Coloane" />
+		                <asp:ListItem value="CO" Text="Colombia" />
+		                <asp:ListItem value="CK" Text="Cook Islands" />
+		                <asp:ListItem value="GR" Text="Corfu" />
+		                <asp:ListItem value="FR" Text="Corsica" />
+		                <asp:ListItem value="CR" Text="Costa Rica" />
+		                <asp:ListItem value="GR" Text="Crete" />
+		                <asp:ListItem value="HR" Text="Croatia" />
+		                <asp:ListItem value="CU" Text="Cuba" />
+		                <asp:ListItem value="AN" Text="Curacao" />
+		                <asp:ListItem value="CY" Text="Cyprus" />
+		                <asp:ListItem value="CZ" Text="Czech Republic" />
+		                <asp:ListItem value="JP" Text="Daito Island" />
+		                <asp:ListItem value="DK" Text="Denmark" />
+		                <asp:ListItem value="GR" Text="Dodecanese Island" />
+		                <asp:ListItem value="DM" Text="Dominica" />
+		                <asp:ListItem value="DO" Text="Dominican Republic" />
+		                <asp:ListItem value="AE" Text="Dubai" />
+		                <asp:ListItem value="TP" Text="East Timor" />
+		                <asp:ListItem value="EC" Text="Ecuador" />
+		                <asp:ListItem value="EG" Text="Egypt" />
+		                <asp:ListItem value="SV" Text="El Salvador" />
+		                <asp:ListItem value="GB" Text="England" />
+		                <asp:ListItem value="EE" Text="Estonia" />
+		                <asp:ListItem value="FK" Text="Falkland Islands" />
+		                <asp:ListItem value="KI" Text="Fanning Island" />
+		                <asp:ListItem value="FO" Text="Faroe Islands" />
+		                <asp:ListItem value="FJ" Text="Fiji" />
+		                <asp:ListItem value="FI" Text="Finland" />
+		                <asp:ListItem value="FR" Text="France" />
+		                <asp:ListItem value="GF" Text="French Guiana" />
+		                <asp:ListItem value="PF" Text="French Polynesia" />
+		                <asp:ListItem value="AE" Text="Fujairah" />
+		                <asp:ListItem value="NC" Text="Futuna Islands" />
+		                <asp:ListItem value="GE" Text="Georgia" />
+		                <asp:ListItem value="DE" Text="Germany" />
+		                <asp:ListItem value="GI" Text="Gibraltar" />
+		                <asp:ListItem value="KI" Text="Gilbert Islands" />
+		                <asp:ListItem value="GB" Text="Great Britain" />
+		                <asp:ListItem value="GR" Text="Greece" />
+		                <asp:ListItem value="GL" Text="Greenland" />
+		                <asp:ListItem value="GD" Text="Grenada" />
+		                <asp:ListItem value="GP" Text="Guadeloupe" />
+		                <asp:ListItem value="GU" Text="Guam" />
+		                <asp:ListItem value="GT" Text="Guatemala" />
+		                <asp:ListItem value="GB" Text="Guernsey" />
+		                <asp:ListItem value="GY" Text="Guyana" />
+		                <asp:ListItem value="HT" Text="Haiti" />
+		                <asp:ListItem value="CK" Text="Hervey Islands" />
+		                <asp:ListItem value="HN" Text="Honduras" />
+		                <asp:ListItem value="HK" Text="Hong Kong" />
+		                <asp:ListItem value="JP" Text="Honshu Island" />
+		                <asp:ListItem value="NC" Text="Hunan Islands" />
+		                <asp:ListItem value="HU" Text="Hungary" />
+		                <asp:ListItem value="IS" Text="Iceland" />
+		                <asp:ListItem value="IN" Text="India" />
+		                <asp:ListItem value="GB" Text="Ireland (Northern)" />
+		                <asp:ListItem value="IE" Text="Ireland (Republic)" />
+		                <asp:ListItem value="GB" Text="Isle of Man" />
+		                <asp:ListItem value="NC" Text="Isle of Pines" />
+		                <asp:ListItem value="IL" Text="Israel" />
+		                <asp:ListItem value="IT" Text="Italy" />
+		                <asp:ListItem value="ES" Text="Jadu" />
+		                <asp:ListItem value="JM" Text="Jamaica" />
+		                <asp:ListItem value="JP" Text="Japan" />
+		                <asp:ListItem value="ID" Text="Java" />
+		                <asp:ListItem value="GB" Text="Jersey" />
+		                <asp:ListItem value="KI" Text="Kiribati" />
+		                <asp:ListItem value="KR" Text="Korea South" />
+		                <asp:ListItem value="IT" Text="Lagosta" />
+		                <asp:ListItem value="LA" Text="Lao" />
+		                <asp:ListItem value="LV" Text="Latvia" />
+		                <asp:ListItem value="VG" Text="Leeward Islands (British)" />
+		                <asp:ListItem value="PF" Text="Leeward Islands (French)" />
+		                <asp:ListItem value="CH" Text="Liechtenstein" />
+		                <asp:ListItem value="LT" Text="Lithuania" />
+		                <asp:ListItem value="NC" Text="Loyalty Islands" />
+		                <asp:ListItem value="LU" Text="Luxembourg" />
+		                <asp:ListItem value="MO" Text="Macao" />
+		                <asp:ListItem value="MK" Text="Macedonia" />
+		                <asp:ListItem value="MG" Text="Madagascar" />
+		                <asp:ListItem value="MK" Text="Madeira" />
+		                <asp:ListItem value="ID" Text="Madura Island" />
+		                <asp:ListItem value="MY" Text="Malaysia" />
+		                <asp:ListItem value="MV" Text="Maldives" />
+		                <asp:ListItem value="ML" Text="Mali" />
+		                <asp:ListItem value="MT" Text="Malta" />
+		                <asp:ListItem value="PG" Text="Manus Island" />
+		                <asp:ListItem value="USMP" Text="Mariana Islands" />
+		                <asp:ListItem value="MH" Text="Marshall Islands" />
+		                <asp:ListItem value="PF" Text="Marquesas Island" />
+		                <asp:ListItem value="MQ" Text="Martinique" />
+		                <asp:ListItem value="MR" Text="Mauritania" />
+		                <asp:ListItem value="MU" Text="Mauritius" />
+		                <asp:ListItem value="YT" Text="Mayotte" />
+		                <asp:ListItem value="MX" Text="Mexico" />
+		                <asp:ListItem value="FM" Text="Micronesia" />
+		                <asp:ListItem value="MD" Text="Moldova" />
+		                <asp:ListItem value="ID" Text="Moluccas Islands" />
+		                <asp:ListItem value="FR" Text="Monaco" />
+		                <asp:ListItem value="MN" Text="Mongolia" />
+		                <asp:ListItem value="MS" Text="Montserrat" />
+		                <asp:ListItem value="MA" Text="Morocco" />
+		                <asp:ListItem value="MM" Text="Myanmar" />
+		                <asp:ListItem value="NR" Text="Nauru" />
+		                <asp:ListItem value="NP" Text="Nepal" />
+		                <asp:ListItem value="NL" Text="Netherlands" />
+		                <asp:ListItem value="AN" Text="Netherlands Antilles" />
+		                <asp:ListItem value="PG" Text="New Britain" />
+		                <asp:ListItem value="NC" Text="New Caledonia" />
+		                <asp:ListItem value="PG" Text="New Ireland" />
+		                <asp:ListItem value="NZ" Text="New Zealand" />
+		                <asp:ListItem value="NI" Text="Nicaragua" />
+		                <asp:ListItem value="IN" Text="Nicobar Islands" />
+		                <asp:ListItem value="NE" Text="Niger" />
+		                <asp:ListItem value="NU" Text="Niue Islands" />
+		                <asp:ListItem value="AU" Text="Norfolk Islands" />
+		                <asp:ListItem value="GB" Text="Northern Ireland" />
+		                <asp:ListItem value="NO" Text="Norway" />
+		                <asp:ListItem value="KI" Text="Ocean Island" />
+		                <asp:ListItem value="OM" Text="Oman" />
+		                <asp:ListItem value="UM" Text="Outlying Minor Islands" />
+		                <asp:ListItem value="PK" Text="Pakistan" />
+		                <asp:ListItem value="USPW" Text="Palau" />
+		                <asp:ListItem value="PA" Text="Panama" />
+		                <asp:ListItem value="PG" Text="Papua New Guinea" />
+		                <asp:ListItem value="PY" Text="Paraguay" />
+		                <asp:ListItem value="PE" Text="Peru" />
+		                <asp:ListItem value="PH" Text="Philippines" />
+		                <asp:ListItem value="PN" Text="Pitcairn Islands" />
+		                <asp:ListItem value="PL" Text="Poland" />
+		                <asp:ListItem value="PT" Text="Portugal" />
+		                <asp:ListItem value="PR" Text="Puerto Rico" />
+		                <asp:ListItem value="NZ" Text="Rarotonga Islands" />
+		                <asp:ListItem value="ID" Text="Rhio Island" />
+		                <asp:ListItem value="MU" Text="Rodriguez Island" />
+		                <asp:ListItem value="RO" Text="Romania" />
+		                <asp:ListItem value="RU" Text="Russian Federation" />
+		                <asp:ListItem value="JP" Text="Ryukyu Island" />
+		                <asp:ListItem value="AN" Text="Saba" />
+		                <asp:ListItem value="VC" Text="Saint Vincent &amp; the Grenadines" />
+		                <asp:ListItem value="LC" Text="Saint Lucia" />
+		                <asp:ListItem value="MP" Text="Saipan" />
+
+		                <asp:ListItem value="WS" Text="Samoa" />
+		                <asp:ListItem value="IT" Text="San Marino (Rep.)" />
+		                <asp:ListItem value="IT" Text="Sardinia" />
+		                <asp:ListItem value="SA" Text="Saudi Arabia" />
+		                <asp:ListItem value="GB" Text="Scotland" />
+		                <asp:ListItem value="SN" Text="Senegal" />
+		                <asp:ListItem value="SL" Text="Sierra Leone" />
+		                <asp:ListItem value="SG" Text="Singapore" />
+		                <asp:ListItem value="SK" Text="Slovakia" />
+		                <asp:ListItem value="SI" Text="Slovenia" />
+		                <asp:ListItem value="PF" Text="Society Islands" />
+		                <asp:ListItem value="SB" Text="Solomon Islands" />
+		                <asp:ListItem value="ZA" Text="South Africa" />
+		                <asp:ListItem value="KR" Text="South Korea" />
+		                <asp:ListItem value="ES" Text="Spain" />
+		                <asp:ListItem value="ES" Text="Spanish Territories of North Africa" />
+		                <asp:ListItem value="NO" Text="Spitzbergen" />
+		                <asp:ListItem value="LK" Text="Sri Lanka" />
+		                <asp:ListItem value="KN" Text="St. Christopher &amp; Nevis" />
+		                <asp:ListItem value="VI" Text="St. Croix" />
+		                <asp:ListItem value="AN" Text="St. Eustatius" />
+		                <asp:ListItem value="SH" Text="St. Helena" />
+		                <asp:ListItem value="VI" Text="St. John" />
+		                <asp:ListItem value="AN" Text="St. Maarten" />
+		                <asp:ListItem value="PM" Text="St. Pierre &amp; Miquelon" />
+		                <asp:ListItem value="VI" Text="St. Thomas" />
+		                <asp:ListItem value="ID" Text="Sumatra Island" />
+		                <asp:ListItem value="SR" Text="Suriname" />
+		                <asp:ListItem value="NO" Text="Svalbard" />
+		                <asp:ListItem value="SZ" Text="Swaziland" />
+		                <asp:ListItem value="SE" Text="Sweden" />
+		                <asp:ListItem value="CH" Text="Switzerland" />
+		                <asp:ListItem value="SY" Text="Syrian Arab Rep." />
+		                <asp:ListItem value="PF" Text="Tahiti" />
+		                <asp:ListItem value="MO" Text="Taipa" />
+		                <asp:ListItem value="TW" Text="Taiwan" />
+		                <asp:ListItem value="KI" Text="Tarawa Islands" />
+		                <asp:ListItem value="AU" Text="Tasmania" />
+		                <asp:ListItem value="TK" Text="Tokelau Islands" />
+		                <asp:ListItem value="TO" Text="Tonga Islands" />
+		                <asp:ListItem value="VU" Text="Torres Islands" />
+		                <asp:ListItem value="VG" Text="Tortola Island" />
+		                <asp:ListItem value="PF" Text="Touamotu Islands" />
+		                <asp:ListItem value="ZA" Text="Transkei" />
+		                <asp:ListItem value="TT" Text="Trinidad &amp; Tobago" />
+		                <asp:ListItem value="TI" Text="Tristan da Cunha" />
+		                <asp:ListItem value="PF" Text="Tubuai Islands" />
+		                <asp:ListItem value="TN" Text="Tunisia" />
+		                <asp:ListItem value="TR" Text="Turkey" />
+		                <asp:ListItem value="TM" Text="Turkmenistan" />
+		                <asp:ListItem value="TC" Text="Turks &amp; Caicos Islands" />
+		                <asp:ListItem value="TV" Text="Tuvalu" />
+		                <asp:ListItem value="UA" Text="Ukraine" />
+		                <asp:ListItem value="AE" Text="United Arab Emirates" />
+		                <asp:ListItem value="WS" Text="Upolu Island" />
+		                <asp:ListItem value="UY" Text="Uruguay" />
+		                <asp:ListItem value="VU" Text="Vanuatu" />
+		                <asp:ListItem value="VA" Text="Vatican" />
+		                <asp:ListItem value="ZA" Text="Venda" />
+		                <asp:ListItem value="VE" Text="Venezuela" />
+		                <asp:ListItem value="VN" Text="Viet Nam" />
+		                <asp:ListItem value="US" Text="Virgin Gorda" />
+		                <asp:ListItem value="VG" Text="Virgin Islands (British)" />
+
+		                <asp:ListItem value="VI" Text="Virgin Islands (U.S.)" />
+		                <asp:ListItem value="GB" Text="Wales" />
+		                <asp:ListItem value="WF" Text="Wallis and Futuna" />
+		                <asp:ListItem value="WF" Text="Wallis Island" />
+		                <asp:ListItem value="KI" Text="Washington Island" />
+		                <asp:ListItem value="YE" Text="Yemen" />
+		                <asp:ListItem value="CS" Text="Yugoslavia" />
+		                <asp:ListItem value="CD" Text="Zaire" />
+	                </asp:DropDownList>
+				</div>
+				<div class="input-wrapper">
+					<label><h3><asp:label id="LabelPhone" runat="server" Text="Phone" /></h3></label>
+					<asp:textbox id="UserPhone" Columns="20" runat="server" maxlength="99" />
+				</div>
+				<div class="input-wrapper">
+					<label><h3>Fax</h3></label>
+					<asp:textbox id="UserFax" Columns="20" runat="server"  maxlength="99" />
+				</div>
+				<div class="input-wrapper">
+					<label><h3>Referral ID (or leave blank)</h3></label>
+					<asp:textbox id="UserReferral" Columns="20" runat="server" maxlength="25" />
+				</div>
+				<div class="input-wrapper">
+					<label><h3><asp:label id="LabelEmail" runat="server" Text="Email"/></h3></label>
+					<asp:textbox id="UserEmail" Columns="60" runat="server" maxlength="99" />
+				</div>
+			</div>
+
+			<div class="col-12of14 form">
+				<h5>Disclaimer</h5>
+				<p>Please read and agree to the terms to proceed with your online purchase.</p>
+				<div id="disclaimer">
+					<h2>Customer Agreement</h2>
+
+					<p>PLEASE READ THIS DOCUMENT CAREFULLY. IT CONTAINS IMPORTANT TERMS AND CONDITIONS WHICH AFFECT YOUR LEGAL RIGHTS AND REMEDIES.</p>
+
+					<p>Parties. This Agreement is between you and Biosense Pharmacy, d.b.a b12cream.com(" B12CREAM "). When we refer to "us", "we" or "our" in this Agreement, we are referring to B12CREAM.</p>
+
+					<p>Our Services. B12CREAM allows you to purchase products and related products through our website, which is currently located at www.b12cream.com(the " Website "). We refer to these services as the " Services ". Acceptance of these services and terms authorizes B12CREAM to act on your behalf to acquire items or products from third party sources. You acknowledge that B12CREAM does not manufacture any of these items only obtains them on your behalf.</p>
+
+					<p>Excluded Services. B12CREAM does not provide any medical services or advice whatsoever. You agree that you are not relying on B12CREAM for any medical services or advice.</p>
+
+					<p>Your Representations, Warranties and Obligations. You represent, warrant and agree that:</p>
+
+					<p>YOU WILL:only use the products you purchase from us in accordance with the manufacturer's instructions;</p>
+
+					<p>immediately stop using the products and contact your Physician if you experience any side effects;</p>
+
+					<p>all information you have provided (and will provide) to B12CREAM is (and will be) current, complete, and accurate and truthful;</p>
+
+					<p>you will use the Services in a manner consistent with all applicable laws and regulations;</p>
+
+					<p>you will not impersonate anyone or falsely represent an affiliation with any person or entity;
+
+					<p>you will not attempt to disrupt or interfere with the functioning of the Services; and you have full legal authority to use the Services.</p>
+
+					<p>Updated Information. You must immediately notify us if any of the information you have provided to us is or becomes inaccurate or incorrect.</p>
+
+					<p>Security. You must maintain the confidentiality and security of your username and password. You are solely responsible for all activities conducted under your user-name.</p>
+
+					<p>Prices and Quantity. All prices are subject to change without prior notice. B12CREAM reserves the right to limit the quantities of your orders.</p>
+
+					<p>No Refunds. We will not provide any refunds after your order has been shipped.</p>
+
+					<p>Mistakes. If an error occurs regarding the description, price or availability of any product displayed on the Website or regarding any aspect of your order, B12CREAM may correct or cancel your order at any time.</p>
+
+					<p>Privacy Policies. B12CREAM respects your personal privacy. You can view our privacy policies from our home page.</p>
+
+					<p>Consent to Collection of Personal Information. You acknowledge that B12CREAM will collect personal information about you (your " Personal Information	"), including your name, contact information, personal preferences and credit card numbers.</p>
+
+					<p>YOU ACKNOWLEDGE THAT B12CREAM AND ITS REPRESENTATIVES MAY USE THE PERSONAL INFORMATION FOR THE FOLLOWING PURPOSES:
+					to customize the advertising and content that is presented to you on the Website,</p>
+
+					<p>to process and deliver orders you place on the Website,</p>
+
+					<p>to process your payment,</p>
+
+					<p>to contact you regarding your orders or to provide you with future information about our services</p>
+
+					<p>You acknowledge that B12CREAM will disclose your Personal Information electronically or in writing to B12CREAM's payment and delivery service providers and the purposes described in the above paragraph. B12CREAM will not provide this information to any additional parties without your consent.</p>
+
+					<p>YOU HEREBY CONSENT TO B12CREAM COLLECTING, USING AND DISCLOSING YOUR PERSONAL INFORMATION IN THE MANNER DESCRIBED ABOVE.
+					WEBSITE RISKS. THE WEBSITE, ITS DESIGN, AND ALL INFORMATION, IMAGES, ARTWORK, TEXT, VIDEO, AUDIO, PICTURES AND OTHER MATERIALS ON THIS WEBSITE (COLLECTIVELY, THE " Content ") ARE PROVIDED "AS IS". THE Content IS BELIEVED TO BE ACCURATE WHEN IT WAS POSTED ON THIS SITE. HOWEVER, B12CREAM DOES NOT REPRESENT OR WARRANT THAT THE Content IS ACCURATE, COMPLETE OR CURRENT.</p>
+
+					<p>PRODUCT RISKS. THERE ARE RISKS INVOLVED WITH THE USE OF VARIOUS PRODUCTS, INCLUDING SERIOUS ILLNESS AND DEATH. B12CREAM DOES NOT ACCEPT RESPONSIBILITY FOR ANY OF THESE RISKS, NOR DOES B12CREAM ACCEPT ANY RESPONSIBILITY FOR DETERMINING WHETHER ANY PARTICULAR PRODUCT IS SAFE OR SUITABLE FOR YOU. YOU FULLY AND SOLELY ACCEPT THESE RISKS AND RESPONSIBILITIES.</p>
+
+					<p>RELEASE. YOU RELEASE B12CREAM AND ITS PHARMACISTS (AND THEIR OFFICERS, DIRECTORS, SHAREHOLDERS, EMPLOYEES AND REPRESENTATIVES) AND ITS PHYSICIANS FROM ALL CLAIMS, ACTIONS, LIABILITIES AND DAMAGES OF EVERY KIND AND NATURE RELATING TO ANY RISKS AND RESPONSIBILITIES DESCRIBED IN THIS AGREEMENT.</p>
+
+					<p>DISCLAIMERS. B12CREAM DISCLAIMS AND WILL NOT BE BOUND BY ANY WARRANTIES, CONDITIONS OR GUARANTEES, EITHER EXPRESSED OR IMPLIED BY LAW OR CUSTOM, WITH RESPECT TO THE Services, THE Website, THE Content OR THE PRODUCTS AND OTHER PRODUCTS SUPPLIED BY B12CREAM , INCLUDING BUT NOT LIMITED TO WARRANTIES OR CONDITIONS OF TITLE, MERCHANTABLE QUALITY, DURABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT.</p>
+
+					<p>LIMITATION OF LIABILITY. B12CREAM AND ITS PHARMACISTS (AND THEIR OFFICERS, DIRECTORS, SHAREHOLDERS, EMPLOYEES AND REPRESENTATIVES) AND ITS PHYSICIANS WILL NOT BE LIABLE TO YOU OR ANY OTHER PARTY FOR ANY INDIRECT, SPECIAL OR OTHER CONSEQUENTIAL OR INCIDENTAL DAMAGES, LOST PROFITS, BUSINESS INTERRUPTION OR OTHERWISE ARISING DIRECTLY OR INDIRECTLY FROM USE OF THIS WEBSITE, ITS Content, THE PRODUCTS SUPPLIED BY B12CREAM OR OUR SERVICES. IN JURISDICTIONS THAT DO NOT PERMIT EXCLUSION OR LIMITATION OF LIABILITY FOR CONSEQUENTIAL OR INCIDENTAL DAMAGES, B12CREAM'S LIABILITY WILL BE LIMITED TO THE FULLEST EXTENT PERMITTED BY LAW.</p>
+
+					<p>MAXIMUM LIABILITY. THE MAXIMUM LIABILITY OF B12CREAM AND ITS PHARMACISTS (AND THEIR OFFICERS, DIRECTORS, SHAREHOLDERS, EMPLOYEES AND REPRESENTATIVES) AND ITS PHYSICIANS FOR ALL DAMAGES RELATED TO THE Services OR OTHERWISE UNDER THIS AGREEMENT WILL BE LIMITED IN THE AGGREGATE TO THE TOTAL OF THE AMOUNTS YOU PAID TO B12CREAM UNDER THIS AGREEMENT .</p>
+
+					<p>INDEMNITY. YOU WILL INDEMNIFY AND HOLD B12CREAM HARMLESS FROM AND AGAINST ALL CLAIMS, FINES, TAXES, DAMAGES, EXPENSES, COSTS (INCLUDING ACTUAL LAWYERS' FEES) INCURRED BY OR CLAIMED AGAINST B12CREAM OR ITS PHARMACISTS OR THEIR OFFICERS, DIRECTORS, SHAREHOLDERS, EMPLOYEES OR REPRESENTATIVERS OR ITS PHYSICIANS FOR ANY REASON RELATING DIRECTLY OR INDIRECTLY TO YOUR BREACH OF ANY OBLIGATIONS IN THIS AGREEMENT OR THE UNTRUTHFULNESS OR INACCURACY OF ANY OF YOUR REPRESENTATIONS OR WARRANTIES IN THIS AGREEMENT.</p>
+
+					<p>Copyright. The Website and the Content are protected by copyright laws. You may download the Content for your personal, non-commercial viewing, but you may not otherwise copy, reproduce, republish, post, transmit, display, perform, distribute, modify or create derivative works from the Content without B12CREAM's prior written approval.</p>
+
+					<p>Trade-marks. b12cream.com<sup>tm</sup> and the b12cream.com<sup>tm</sup> logo and all other trade-marks and trade names of B12CREAM appearing on the Website are owned by B12CREAM. You must not use any of these marks in association with any product or service, in any manner that is likely to cause confusion, or in any manner that disparages or discredits B12CREAM.</p>
+
+					<p>Linking. The sites that are linked from our Website are not under our control, and B12CREAM does not assume any responsibility or liability for any communications or materials available at those linked sites. All links are provided for your convenience only; they are not an endorsement or referral by B12CREAM. If you wish to provide a link to our the Website from your website, you may only link to our home page at www.b12cream.com. You may not use any of B12CREAM's icons on your website without the express written consent of B12CREAM, and you may not use the link to suggest that B12CREAM sponsors, endorses, approves of or is affiliated to your website.</p>
+
+					<p>Governing Law/Courts. This Agreement will be interpreted according to the laws in force in British Columbia , Canada , and the parties hereby attorn to the exclusive jurisdiction of the courts of British Columbia . YOU AGREE THAT YOU WILL NOT INITIATE OR PARTICIPATE IN ANY LAWSUIT OR OTHER LEGAL ACTION OR PROCEEDING AGAINST B12CREAM OR ITS PHARMACISTS OR THEIR DIRECTORS, OFFICERS, SHAREHOLDERS, EMPLOYEES OR OTHER REPRESENTATIVES OR ITS PHYSICIANS IN ANY COURT OTHER THAN THE COURTS OF BRITISH COLUMBIA, CANADA. You agree that B12CREAM may enforce a final British Columbia judgment in any other jurisdiction by initiating an action or proceeding in that jurisdiction based on the British Columbia judgment or by taking any other steps permitted by law.</p>
+
+					<p>Notices. You consent to receiving notices from B12CREAM by email (using the email address you provide to B12CREAM from time-to-time through the Website) or through postings on the Website. You agree that all notices provided in this way satisfy any legal requirement that such notices be given in writing. You will send all notices to B12CREAM via email to notices@b12cream.com, or to such other addresses or numbers as required by any further notice from B12CREAM.</p>
+
+					<p>Changes. The terms and conditions of your future orders with B12CREAM may vary from the terms and conditions of this Agreement. Please ensure you thoroughly read the terms and conditions in effect at the time you place your order with B12CREAM.</p>
+
+					<p>General. No waiver of any breach of any term or condition of this Agreement will be construed to waive any subsequent breach of the same or any term or condition of this Agreement. If any provision of this Agreement is held to be invalid, illegal or unenforceable, the validity, legality and enforceability of the remaining provisions will not in any way be affected or impaired. This Agreement forms the complete agreement between the parties and will not be interpreted by reference to any previous document or agreement, either oral or written, unless specific provision is herein made to the contrary. You may not assign or sublicense any of your rights under this Agreement without our written consent, which may be withheld for any reason or without reason. We may assign and sublicense all or any of our rights under this Agreement as we see fit. Headings have been inserted into this Agreement for convenience only and will not be used to interpret this Agreement. You will execute and deliver to us any additional instruments and take any additional steps that may be required to give full effect to the intent expressed in this Agreement. This Agreement will bind and ensure to the parties hereto and their respective lawful successors and permitted assigns</p>
+				</div>
+				<h3>By clicking on the "Continue" button, I confirm that:</h3>
+				<ul class="square padding-left-true">
+					<li>I have read and understood all of the above terms and conditions and acknowledge that these terms and conditions form part of this agreement</li>
+
+					<li>I understand that the above terms and conditions significantly limit my legal rights and remedies.</li>
+
+					<li>I am at least 19 years old and have reached the legal age of majority in the jurisdiction where I live.</li>
+				</ul>
+
+				<h3>By clicking on the "Continue" button, I agree:</h3>
+				<ul class="square padding-left-true">
+					<li>to be legally bound by the above terms and conditions, and</li>
+
+					<li>that the above terms and conditions will immediately form a binding contract between me and b12cream.com.</li>
+				<ul>
+			</div>
+
+			<div class="col-12of14 check-out">
+				<div class="col-10of12 right">
+					<asp:LinkButton id="UserSubmit" runat="server" value="1" CssClass="buy right" Text="Continue" onclick="UserSubmit_Click" />
+				</div>
+			</div>
+
+		</div>
+
+
+		<!--#include file="footer.aspx"-->
+		
+	</form>
+
+
+<script src="js/ios_doubleTap_disable.js"></script>
+</body>
+</html>

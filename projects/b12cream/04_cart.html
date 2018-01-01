@@ -1,0 +1,770 @@
+<%@ Page Language="VB" %>
+<!DOCTYPE html>
+<%@ Import Namespace = "System.Data" %>
+<%@ Import Namespace = "System.Data.SqlClient" %>
+<!--#include file="/conn/conn.aspx"-->
+<script language="VB" runat="server">
+
+	Public TheP As String
+	Public TheOrderTotal As Single
+	    Public TheError As String
+		Public CouponUsed As Boolean
+		Public UpdateCoupon As Boolean
+		Public CouponID As Integer
+		Public CouponAmount As Single
+	    Public CouponItemsTotal, CouponItemsTotal2, CouponItemsTotalAll As Single
+		Public VIPApplied As Boolean = False
+		Public SynergieCouponUsed As Boolean = False
+
+
+	Protected Overrides Sub OnError(ByVal e as System.EventArgs) 
+		Response.Redirect("http://www.b12cream.com/index.aspx")
+	End Sub
+
+
+    Protected Function SqlEnc(ByVal a As String) As String
+	
+        Dim TempS As String = ""
+		
+        If Not a Is DBNull.Value Then
+            TempS = Trim(Replace(a, "'", "''"))
+            TempS = Replace(TempS, vbCrLf, "")
+        End If
+        Return TempS
+    End Function
+
+
+	Sub CheckCoupon()
+
+		Dim connA As New SqlConnection(ConnString)
+		Dim sqlA As New SqlCommand
+		connA.Open()
+		Dim ThePrice1, ThePriceC1 As Single
+		Dim DeleteCoupon AS Boolean = False
+
+		If Session("CouponMin") > 0 Then
+			If Session("CouponItemsTotal") < Session("CouponMin") Then
+			DeleteCoupon=True
+			End If
+		End If
+			
+	 	If Session("CouponAmount") > 0 Then	
+	  		If Session("CouponAmount") < 1  Then
+
+				CouponAmount = Math.Round(Session("CouponItemsTotal") * Session("CouponAmount"),2) * -1	
+	  		Else
+				CouponAmount = Session("CouponAmount") * -1				 
+	  		End If
+	 	End If
+		If Session("CouponItemsTotal") > 0 AND Session("CouponAmount") > 0 Then
+		 	If Session("InCAD") = 1 Then
+				ThePriceC1 = CouponAmount
+				ThePrice1 = Math.Round(CouponAmount * Session("ExchangeCADUSD"), 2)
+		 	Else
+				ThePrice1 = CouponAmount
+				ThePriceC1 = Math.Round(CouponAmount / Session("ExchangeCADUSD"), 2)
+		 	End If
+		Else
+	 	 	DeleteCoupon=True
+	 	End If
+		'connA.Open
+		If DeleteCoupon Then 
+		 	sqlA = New SqlCommand("DELETE FROM TempItem WHERE ID=" & Session("CouponID") , connA)
+		 	Session("CouponCode") = ""
+			Session("CouponAmount") = 0
+			Session("CouponMin") = 0
+			Session("CouponProductID") = 0
+		 	Session("CouponOneTime") = 0
+			Session("CouponKeyword") = ""
+			Session("CouponExclude") = ""
+			Session("CouponCategory") = ""
+		Else
+			sqlA = New SqlCommand("UPDATE TempItem SET Price = " & ThePrice1 & ", PriceC = " & ThePriceC1 & " WHERE ID=" & Session("CouponID") , connA)			
+		End If
+        sqlA.ExecuteNonQuery()	
+		connA.Close
+		connA = nothing
+		Response.Redirect("/04_cart.aspx")			
+	End Sub
+	
+	Sub CheckAutoCoupon()
+
+		Dim connA As New SqlConnection(ConnString)
+		Dim sqlA As New SqlCommand
+		connA.Open()
+			Dim ThePrice1, ThePriceC1 As Single
+		Dim DeleteCoupon AS Boolean = False
+		Dim TheDesc As String
+			
+	 	If Session("SynergieTotal") >= 150 Then
+			If Session("InCAD") = 1 Then
+				If Session("SynergieTotal") >= 300 Then
+					If Session("SynergieTotal") >= 450 Then
+						ThePriceC1 = -45
+						TheDesc = "Free gifts: Bioevolve B12 Plus+ Cream 15g x 2, Bioevolve Damask Rose Squalene Serum 2mL, Bioevolve Breast Booster 3mL gift trial, Bievolve Easy Slim Treatment 4.5mL gift trial, Purefresh Hair & Body Care Gift Set 60mL Travel Pack"
+					Else
+						ThePriceC1 = -25
+						TheDesc = "Free gifts: Bioevolve B12 Plus+ Cream 15g, Bioevolve Damask Rose Squalene Serum 2mL, Purefresh Hair & Body Care Gift Set 60mL Travel Pack"
+					End If
+				Else
+					ThePriceC1 = -10
+					TheDesc = "Free gifts: Bioevolve B12 Plus+ Cream 15g, Bioevolve Damask Rose Squalene Serum 2mL"
+				End If
+				ThePrice1 = Math.Round(ThePriceC1 * Session("ExchangeCADUSD"), 2)
+		 	Else
+				If Session("SynergieTotal") >= 300 Then
+					If Session("SynergieTotal") >= 450 Then
+						ThePrice1 = -45
+						TheDesc = "Free gifts: Bioevolve B12 Plus+ Cream 15g x 2, Bioevolve Damask Rose Squalene Serum 2mL, Bioevolve Breast Booster 3mL gift trial, Bievolve Easy Slim Treatment 4.5mL gift trial, Purefresh Hair & Body Care Gift Set 60mL Travel Pack"
+					Else
+						ThePrice1 = -20
+						TheDesc = "Free gifts: Bioevolve B12 Plus+ Cream 15g, Bioevolve Damask Rose Squalene Serum 2mL, Purefresh Hair & Body Care Gift Set 60mL Travel Pack"
+					End If
+				Else
+					ThePrice1 = -10
+					TheDesc = "Free gifts: Bioevolve B12 Plus+ Cream 15g, Bioevolve Damask Rose Squalene Serum 2mL"
+				End If
+				ThePriceC1 = Math.Round(ThePrice1 / Session("ExchangeCADUSD"), 2)
+		 	End If
+ 		Else
+ 	 		DeleteCoupon=True
+	 	End If
+		'connA.Open
+		If DeleteCoupon Then 
+			 sqlA = New SqlCommand("DELETE FROM TempItem WHERE ID=" & Session("SynergieCouponID") , connA)
+			 
+		Else
+			sqlA = New SqlCommand("UPDATE TempItem SET [Desc] ='Instant Discount & " & TheDesc & "', Price = " & ThePrice1 & ", PriceC = " & ThePriceC1 & " WHERE ID=" & Session("SynergieCouponID") , connA)			
+		End If
+        sqlA.ExecuteNonQuery()	
+		connA.Close
+		connA = nothing
+		Response.Redirect("/04_cart.aspx")			
+	End Sub
+	
+	Sub DoCoupon()
+
+		Dim connA As New SqlConnection(ConnString)
+        Dim drA,drB,drC As SqlDataReader
+		Dim sqlA,sqlB,sqlC As New SqlCommand
+		connA.Open()
+		Dim ThePrice1, ThePriceC1 As Single
+		
+ 
+ 
+	 	sqlA = New SqlCommand("SELECT Amount,Expiry,Name,OneTime,MinAmount,ProductID,CategoryID,Keyword,Exclude FROM Coupons WHERE (Site = 0 OR Site = " & Session("TheCurrentSite") & ") AND CouponCode = '" & SqlEnc(VoucherCodeDisplay.Text.toUpper) & "'",connA)
+			drA = SqlA.ExecuteReader
+			If drA.Read Then
+				If DateDiff("d",Now.Date,drA("Expiry")) >= 0 Then
+			
+
+		            If Session("InCAD") <> 1 Then
+						sqlB = New SqlCommand("SELECT [Desc],ProductID,Quantity,Price FROM TempItem WHERE OrderID = " & Session("OrderID"), connA)
+	        	    Else
+ 	            	    sqlB = New SqlCommand("SELECT [Desc],ProductID,Quantity,PriceC As Price FROM TempItem WHERE OrderID = " & Session("OrderID"), connA)
+		            End If
+
+	            	drB = sqlB.ExecuteReader()
+					Session("CouponItemsTotal") = 0
+    	        	While drB.Read
+
+						If drA("ProductID") <> 0 Then
+							If drA("ProductID") = drB("ProductID") Then
+								Session("CouponItemsTotal") = Session("CouponItemsTotal")  + (drB("Price") * drB("Quantity"))		
+							End If
+						End If
+						If drA("CategoryID") <> 0 Then
+							sqlC = New SqlCommand("SELECT ProductID FROM ProductCategories WHERE ProductID = " & drA("ProductID"), connA)
+							drC = sqlC.ExecuteReader()
+							If drC.Read Then
+								If NOT IsDBNull(drC("ProductID")) Then
+									Session("CouponItemsTotal") = Session("CouponItemsTotal")  + (drB("Price") * drB("Quantity"))
+								End If								
+							End If
+							drC.Close
+						End If
+						If drA("Keyword") <> "" Then
+							If drA("Exclude") <> "" Then
+								If InStr(drB("Desc"),drA("Keyword")) > 0 AND InStr(drB("Desc"),drA("Exclude")) < 1 Then
+									Session("CouponItemsTotal") = Session("CouponItemsTotal")  + (drB("Price") * drB("Quantity"))
+								End If
+							Else
+								If InStr(drB("Desc"),drA("Keyword")) > 0 Then
+									Session("CouponItemsTotal") = Session("CouponItemsTotal")  + (drB("Price") * drB("Quantity"))
+								End If
+							End If
+						Else
+							Session("CouponItemsTotal") = Session("CouponItemsTotal")  + (drB("Price") * drB("Quantity"))
+						End If
+					
+					End While
+					drB.Close
+				
+
+					''''make sure to check coupon on checkoutfinal for one time coupons
+					If drA("MinAmount") > 0 Then
+						If Session("CouponItemsTotal") < drA("MinAmount") Then
+							drA.Close
+							connA.Close
+						    Response.Redirect("/04_cart.aspx")	
+						End If
+					End If
+
+					If drA("Amount") < 1 Then
+						CouponAmount = Math.Round(Session("CouponItemsTotal") * drA("Amount"),2) * -1	
+						Else
+						CouponAmount = drA("Amount") * -1				 
+					End If
+
+					If Session("InCAD") = 1 Then
+						ThePriceC1 = CouponAmount
+						ThePrice1 = Math.Round(CouponAmount * Session("ExchangeCADUSD"), 2)
+						Else
+						ThePrice1 = CouponAmount
+						ThePriceC1 = Math.Round(CouponAmount / Session("ExchangeCADUSD"), 2)
+					End If
+					If CouponAmount < 0 Then
+						sqlA = New SqlCommand("INSERT INTO TempItem ([Desc],[Quantity],[Price],[PriceC],[CostPrice],[CostPriceC],[ProductID],[OrderID],SSID) VALUES ('" & SqlEnc(drA("Name")) & "',1," & ThePrice1 & "," & ThePriceC1 & ",0,0,75783," & Session("OrderID") & ",91445)", connA)
+					 	sqlA.ExecuteNonQuery()
+				 	End If
+			 
+					Session("CouponCode") = VoucherCodeDisplay.Text.toUpper
+					Session("CouponAmount") = drA("Amount")
+					Session("CouponMin") = drA("MinAmount")
+					Session("CouponProductID") = drA("ProductID")
+					Session("CouponCategory") = drA("CategoryID")
+					Session("CouponOneTime") = drA("OneTime")
+					If drA("Keyword") <> "" AND drA("ProductID") = 0 AND drA("CategoryID") = 0 Then
+					 	Session("CouponKeyword") = drA("Keyword")
+					Else
+						 Session("CouponKeyword") = ""
+					End If
+					If drA("Exclude") <> "" AND drA("ProductID") = 0 AND drA("CategoryID") = 0 AND drA("Keyword") <> "" Then
+					 	Session("CouponExclude") = drA("Exclude")
+					Else
+						 Session("CouponExclude") = ""
+					End If
+			 
+					drA.Close
+					connA.Close()
+					connA = Nothing
+					Response.Redirect("/04_cart.aspx")	
+				Else
+					drA.Close
+					connA.Close()
+					connA = Nothing
+					Response.Redirect("/04_cart.aspx")							
+				End If
+		
+			Else
+		        connA.Close()
+		        connA = Nothing
+		        Response.Redirect("/04_cart.aspx")	
+		End If
+	End Sub
+
+	Sub DoAutoCoupon()
+
+		Dim connA As New SqlConnection(ConnString)
+        Dim drA As SqlDataReader
+		Dim sqlA As New SqlCommand
+		connA.Open()
+		Dim ThePrice1, ThePriceC1 As Single
+		Dim TheDescC As String
+						
+						
+		If NOT SynergieCouponUsed Then
+			CouponAmount = 0
+			'TheDescC = ""
+			If Session("SynergieTotal") >= 150 Then
+				CouponAmount = -10
+				TheDescC = "Free gifts: Bioevolve B12 Plus+ Cream 15g, Bioevolve Damask Rose Squalene Serum 2mL"
+			End If
+
+			If Session("SynergieTotal") >= 300 Then
+				CouponAmount = -25
+				TheDescC = "Free gifts:Bioevolve B12 Plus+ Cream 15g, Bioevolve Damask Rose Squalene Serum 2mL, Purefresh Hair & Body Care Gift Set 60mL Travel Pack"
+			End If
+
+			If Session("SynergieTotal") >= 450 Then
+				CouponAmount = -45
+				TheDescC = "Free gifts: Bioevolve B12 Plus+ Cream 15g x 2, Bioevolve Damask Rose Squalene Serum 2mL, Bioevolve Breast Booster 3mL gift trial, Bievolve Easy Slim Treatment 4.5mL gift trial, Purefresh Hair & Body Care Gift Set 60mL Travel Pack"
+			End If
+
+
+		
+			'CouponAmount = Math.Round(CouponItemsTotal * .10,2) * -1
+			If Session("InCAD") <> 0 Then
+				ThePriceC1 = CouponAmount
+				ThePrice1 = Math.Round(CouponAmount * Session("ExchangeCADUSD"), 2)
+			Else
+				ThePrice1 = CouponAmount
+				ThePriceC1 = Math.Round(CouponAmount / Session("ExchangeCADUSD"), 2)
+			End If
+			If CouponAmount < 0 Then
+				sqlA = New SqlCommand("INSERT INTO TempItem ([Desc],[Quantity],[Price],[PriceC],[CostPrice],[CostPriceC],[ProductID],[OrderID],SSID) VALUES ('Instant Discount & " & TheDescC &"',1," & ThePrice1 & "," & ThePriceC1 & ",0,0,76262," & Session("OrderID") & ",92154)", connA)
+	        	sqlA.ExecuteNonQuery()
+			End If
+		
+			sqlA = Nothing
+	        connA.Close()
+	        connA = Nothing
+       		Response.Redirect("/04_cart.aspx")
+		Else
+	        connA.Close()
+	        connA = Nothing
+	        Response.Redirect("/04_cart.aspx")	
+		End If	
+	End Sub
+
+	Sub UpdateQuantity(ByVal sender As Object, ByVal e As EventArgs)
+
+		Dim TheButton As Button = CType(sender, Button)
+		Dim TheID As Integer = TheButton.CommandArgument
+		Dim TheItem As RepeaterItem = CType(TheButton.NamingContainer, RepeaterItem)
+		Dim TheIndex As Integer = TheItem.ItemIndex
+		Dim TheQuantity As Integer = CType(TheRepeater.Items(TheIndex).FindControl("Quantity"),Textbox).Text
+        Dim conn As New SqlConnection(ConnString)
+		Dim sql As SqlCommand
+		Dim dr As SqlDataReader
+		Conn.Open()
+
+		sql = New SqlCommand("UPDATE TempItem SET Quantity = " & TheQuantity & " WHERE ID = " & TheID, conn)
+		sql.ExecuteNonQuery
+		Conn.Close
+		Response.Redirect("04_cart.aspx?A=1")
+	End Sub
+
+ 	Protected Sub Add2Cart_Click(ByVal sender As Object, ByVal e As System.EventArgs)
+		Dim TempStr As String
+		Dim TheSSID As String
+		Dim connA As New SqlConnection(ConnString)
+        Dim drA As SqlDataReader
+		Dim sqlA As New SqlCommand
+		Dim sqlI As New SqlCommand
+		Dim FullDesc As String
+		Dim SqlB As New SqlCommand
+		Dim drB As SqlDataReader
+		Dim ThePrice1,ThePriceC1 As Single
+		Dim which As String = sender.CommandArgument
+		Dim IsOK As Boolean = True
+		Dim TheQuantity As Integer = 1
+		connA.Open()
+
+
+		TheQuantity = 1
+		TheP = "76178"
+
+		Select Case which
+		' Featured, Best Seller, New Items
+
+			Case 1
+					TheSSID = 92034
+			Case 2
+					TheSSID = 92220
+			Case 3
+					TheSSID = 92221
+			Case 4
+					TheSSID = 92035
+			Case 5
+					TheSSID = 92222
+			Case 6
+					TheSSID = 92223
+				
+		End Select
+	
+   		If Session("OrderID") = "0" Then
+	        Dim RandomClass As New Random()
+			TempStr = CStr(RandomClass.Next(100000000, 999999999)) & Request.ServerVariables("REMOTE_ADDR") & Now & CStr(RandomClass.Next(100000000, 999999999))
+	
+			sqlA = New SqlCommand("INSERT INTO [Temporder] (Temp,IP,Date,ClientID,Referer) VALUES ('" & TempStr & "','" & Request.ServerVariables("REMOTE_ADDR") & "','" & Now &"',0,'" & Session("Referer") & "')",connA)
+			sqlA.ExecuteNonQuery()
+			sqlA = New SqlCommand("SELECT OrderID FROM TempOrder WHERE Temp = '" & TempStr & "'",connA)
+			drA = sqlA.ExecuteReader()
+			If drA.Read Then
+				Session("OrderID") = drA("OrderID")
+			End If
+			drA.Close
+			
+			sqlA = New SqlCommand("SELECT Rate FROM Exchange WHERE Currencies='CdnUS'",connA)
+			drA = sqlA.ExecuteReader()
+			If drA.Read Then
+				Session("ExchangeCADUSD") = drA("Rate")
+			End If
+			drA.Close
+		End If
+						
+        Dim ThePrice, TheCost, ThePriceC, TheCostC As String
+        If Session("InCAD") <> 1 Then
+            sqlA = New SqlCommand("SELECT Products.Name,ProductDetails.Price,ProductDetails.CostC,ProductDetails.StrengthSize,ProductDetails.SalePrice From Products INNER JOIN ProductDetails ON Products.ProductID = ProductDetails.ProductID WHERE Products.ProductID=" & TheP & " AND ProductDetails.SSID = " & TheSSID, connA)
+            drA = sqlA.ExecuteReader()
+            If drA.Read Then
+				If NOT IsDBNull(drA("Name")) Then
+    	            FullDesc = drA("Name") & " " & drA("StrengthSize")
+					If drA("SalePrice") > 0 Then
+		                ThePrice = drA("SalePrice")
+					Else
+		                ThePrice = drA("Price")
+					End If
+        	        TheCostC = drA("CostC")
+            	    TheCost = Math.Round(TheCostC * Session("ExchangeCADUSD"), 2)
+
+                	ThePriceC = Math.Round(ThePrice / Session("ExchangeCADUSD"), 2)
+				Else
+					IsOK = False
+				End If
+			Else
+				IsOK = False
+            End If
+        Else
+            sqlA = New SqlCommand("SELECT Products.Name,ProductDetails.PriceC,ProductDetails.CostC,ProductDetails.StrengthSize,ProductDetails.SalePriceC From Products INNER JOIN ProductDetails ON Products.ProductID = ProductDetails.ProductID WHERE Products.ProductID=" & TheP & " AND ProductDetails.SSID = " & TheSSID, connA)
+            drA = sqlA.ExecuteReader()
+            If drA.Read Then
+				If NOT IsDBNull(drA("Name")) Then
+	                FullDesc = drA("Name") & " " & drA("StrengthSize")
+					If drA("SalePriceC") > 0 Then
+		                ThePriceC = drA("SalePriceC")
+					Else
+		                ThePriceC = drA("PriceC")
+					End If
+	                TheCostC = drA("CostC")
+	                TheCost = Math.Round(TheCostC * Session("ExchangeCADUSD"), 2)
+	                ThePrice = Math.Round(ThePriceC * Session("ExchangeCADUSD"), 2)
+    			Else
+					IsOK = False
+				End If
+			Else
+				IsOK = False
+	        End If
+        End If
+
+        sqlI = New SqlCommand("INSERT INTO TempItem ([Desc],[Quantity],[Price],[PriceC],[CostPrice],[CostPriceC],[ProductID],[OrderID],SSID) VALUES ('" & SqlEnc(FullDesc) & "'," & TheQuantity & "," & ThePrice & "," & ThePriceC & "," & TheCost & "," & TheCostC & "," & TheP & "," & Session("OrderID") & "," & TheSSID & ")", connA)
+        sqlI.ExecuteNonQuery()
+        sqlI = Nothing
+
+        drA.Close()
+	
+        connA.Close()
+        drA = Nothing
+        connA = Nothing
+    	Response.Redirect("04_cart.aspx?A=1")
+    End Sub
+
+	Sub Page_Load(sender As Object, e As EventArgs)
+	
+        Dim conn As New SqlConnection(ConnString)
+		Dim sql As SqlCommand
+		Dim sda As SqlDataAdapter
+		Dim dr,drB As SqlDataReader
+		Dim ds As DataSet = New DataSet
+		Dim sqlA,sqlB As New SqlCommand
+
+     	UpdateCoupon = False
+		CouponID = 0
+		Conn.Open()
+
+        If Request.QueryString("D") = 1 Then
+            If CInt(Request.QueryString("I")) > 0 Then
+                sql = New SqlCommand("DELETE FROM TempItem WHERE ID = " & CInt(Request.QueryString("I")) & " AND OrderID = " & Session("OrderID"), conn)
+                sql.ExecuteNonQuery()
+  				UpdateCoupon = True
+              sql = Nothing
+            End If
+        End If
+		
+
+		If Not IsPostBack Then
+
+
+           If Session("InCAD") <> 1 Then
+                sql = New SqlCommand("SELECT Quantity,SSID,ProductID,[Desc],Price,ID FROM TempItem WHERE OrderID = " & Session("OrderID"), conn)
+            Else
+                sql = New SqlCommand("SELECT Quantity,SSID,ProductID,[Desc],PriceC As Price,ID FROM TempItem WHERE OrderID = " & Session("OrderID"), conn)
+            End If
+            
+            dr = sql.ExecuteReader()
+
+			If Request.QueryString("A") = 1 Then
+				UpdateCoupon = True
+			End If		
+			CouponUsed = False
+			CouponItemsTotal = 0
+			CouponItemsTotal2 = 0
+ 			Session("CouponItemsTotal") = 0
+			Session("SynergieTotal") = 0
+            While dr.Read
+                TheOrderTotal = TheOrderTotal + (dr("Price") * dr("Quantity"))
+				If dr("Price") > 0 Then
+					'If InStr(dr("Desc"),"Synergie") > 0 Then
+						Session("SynergieTotal") = Session("SynergieTotal") + (dr("Price") * dr("Quantity"))
+					'End If
+					
+					If Session("CouponCode") <> "" Then
+						If Session("CouponProductID") <> 0 Then
+						
+							If dr("ProductID") = Session("CouponProductID") Then
+								Session("CouponItemsTotal") = Session("CouponItemsTotal")  + (dr("Price") * dr("Quantity"))
+							End If
+						End If
+						If Session("CouponKeyword") <> "" Then
+							If Session("CouponExclude") <> "" Then
+								If InStr(dr("Desc"),Session("CouponKeyword")) > 0 AND InStr(dr("Desc"),Session("CouponExclude"))   < 1 Then
+									Session("CouponItemsTotal") = Session("CouponItemsTotal")  + (dr("Price") * dr("Quantity"))									
+								End If
+							Else
+								If InStr(dr("Desc"),Session("CouponKeyword")) > 0  Then
+									Session("CouponItemsTotal") = Session("CouponItemsTotal")  + (dr("Price") * dr("Quantity"))									
+								End If
+							End If
+						End If
+						If Session("CouponCategory") <> 0 Then
+							sqlB = New SqlCommand("SELECT ProductID FROM ProductCategories WHERE ProductID = " & dr("ProductID"), conn)
+							drB = sqlB.ExecuteReader()
+							If drB.Read Then
+								If NOT IsDBNull(drB("ProductID")) Then
+									Session("CouponItemsTotal") = Session("CouponItemsTotal")  + (dr("Price") * dr("Quantity"))
+								End If								
+							End If
+							drB.Close
+
+						End If
+					
+						If Session("CouponKeyword") = "" AND Session("CouponExclude") = "" AND Session("CouponProductID") = 0 AND Session("CouponCategory") = 0 Then
+								Session("CouponItemsTotal") = Session("CouponItemsTotal")  + (dr("Price") * dr("Quantity"))					
+						End If
+					End If																	
+				End If
+				If dr("Price") < 0 AND (dr("ProductID") = 75783 OR dr("ProductID") = 76200) Then 
+					Session("CouponID") = dr("ID")
+					If dr("SSID") = 92071 Then
+						VIPApplied = True
+					Else
+						CouponUsed = True
+					End If
+					'UpdateCoupon = False
+				End If
+				If dr("Price") < 0 AND dr("ProductID") = 76262 Then
+					Session("SynergieCouponID") = dr("ID")					
+					SynergieCouponUsed = True
+				End If
+            End While
+            dr.Close()
+			
+			
+			If UpdateCoupon AND CouponUsed Then
+				Conn.Close()
+				CheckCoupon()
+			End If
+
+			'If UpdateCoupon AND SynergieCouponUsed Then
+				'Try
+					'Conn.Close()
+					'Catch Ex As Exception
+					'End Try
+				'CheckAutoCoupon()
+			'End If
+			
+			If VIPApplied Then
+                sql = New SqlCommand("DELETE FROM TempItem WHERE ID = " & Session("CouponID") & " AND OrderID = " & Session("OrderID"), conn)
+                sql.ExecuteNonQuery()
+				Conn.Close
+				Response.Redirect("/04_cart.aspx")			
+			End If
+
+
+			Subtotal.Text = FormatCurrency(TheOrderTotal,2)
+			'If Not IsPostBack Then
+				'If NOT SynergieCouponUsed AND Session("SynergieTotal") >= 150 Then
+					'Try
+						'conn.Close
+						'Catch Ex As Exception
+					'End Try
+					'DoAutoCoupon()
+				'End If
+			'End If
+
+	        If Session("InCAD") <> 1 Then
+				
+		        sda = New SqlDataAdapter("SELECT Quantity,SSID,ProductID,[Desc],Price,ID,Quantity*Price As TotalPrice FROM TempItem WHERE OrderID = " & Session("OrderID"), conn)
+			Else
+	    	    sda = New SqlDataAdapter("SELECT Quantity,SSID,ProductID,[Desc],PriceC As Price,ID,Quantity*PriceC As TotalPrice FROM TempItem WHERE OrderID = " & Session("OrderID"), conn)
+	        End If
+
+			If Subtotal.Text = "$0.00" Then
+				TheCart.Style("visibility") = "hidden"
+				TheCart.Style("display") = "none"
+				EmptyCart.Style("visibility") = "visible"
+				EmptyCart.Style("display") = ""
+			Else
+				TheCart.Style("visibility") = "visible"
+				TheCart.Style("display") = ""
+				EmptyCart.Style("visibility") = "hidden"
+				EmptyCart.Style("display") = "none"
+				sda.Fill(ds)
+				TheRepeater.DataSource = ds
+				TheRepeater.DataBind()
+		
+			End If
+
+			Conn.Close
+	
+		End If
+	End Sub
+</script>
+
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+   
+   	<title>Shopping Cart | Bioevolve B12 Plus+ Cream</title>
+	<meta name="description" content="Purchase and shopping cart page which contains all products and custom's purchase status.">
+
+	<!-- Bootstrap -->
+	<link href="bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
+	<script src="js/jquery.min.js"></script>
+	<script src="bootstrap/dist/js/bootstrap.min.js"></script>
+
+	<!-- custom css -->
+	<link href="css/grid.css" type="text/css" rel="stylesheet">
+	<link href="css/main.css" type="text/css" rel="stylesheet">
+
+	<!-- custom -->
+	<link href="http://www.jqueryscript.net/css/jquerysctipttop.css" rel="stylesheet" type="text/css">
+</head>
+
+<body>
+	<!--#include file="header.aspx"-->
+
+	<form runat="server">
+
+		<div class="grid shopping-cart" id="pageCart">
+			<div class="col-12of14 product">
+				<h5>ITEMS</h5>
+				<div class="col-2of12">
+					<h2>15g x 1 tube</h2>
+					<img src="img/product_01.jpg" alt="" title="B12+ Cream 15g">
+					<p class="original">&nbsp</p>
+					<h1>$12.95</h1>
+					<h3>&nbsp</h3>
+					<asp:button CssClass="buy" runat="server" CommandArgument="1" OnClick="Add2Cart_Click" Text="Add to Cart" />
+				</div>
+				<div class="col-2of12">
+					<h2>15g x 2 tubes</h2>
+					<img src="img/product_02.jpg" alt="" title="2 tubes of B12+ Cream 15g">
+					<p class="original">original price: <span>$25.90</span></p>
+					<h1>$25.10</h1>
+					<h3><strong>3% OFF</strong></h3>
+					<asp:button CssClass="buy" runat="server" CommandArgument="2" OnClick="Add2Cart_Click" Text="Add to Cart" />
+				</div>
+				<div class="col-2of12">
+					<h2>15g x 5 tubes</h2>
+					<img src="img/product_03.jpg" alt="" title="5 tubes of B12+ Cream 15g">
+					<p class="original">original price: <span>$64.75</span></p>
+					<h1>$59.50</h1>
+					<h3><strong>8% OFF</strong></h3>
+					<asp:button CssClass="buy" runat="server" CommandArgument="3" OnClick="Add2Cart_Click" Text="Add to Cart" />
+				</div>
+				<div class="col-2of12">
+					<h2>60g x 1 tube</h2>
+					<img src="img/product_04.jpg" alt="" title="1 tubes of B12+ Cream 60g">
+					<p class="original">&nbsp</p>
+					<h1>$37.95</h1>
+					<h3><strong>&nbsp</strong></h3>
+					<asp:button CssClass="buy" runat="server" CommandArgument="4" OnClick="Add2Cart_Click" Text="Add to Cart" />
+				</div>
+				<div class="col-2of12">
+					<h2>SUMMER PROMOTION <br> 60g x 2</h2>
+					<img src="img/product_05-summer.png" alt="" title="2 tubes of B12+ Cream 60g">
+					<p class="original">original price: <span>$75.90</span></p>
+					<h1>$72.10</h1>
+					<h3><strong>5% OFF</strong></h3>
+					<h1>Get 15g FREE</h1>
+					<br>
+					<asp:button CssClass="buy" runat="server" CommandArgument="5" OnClick="Add2Cart_Click" Text="Add to Cart" />
+				</div>
+				<div class="col-2of12">
+					<h2>60g x 5 tubes</h2>
+					<img src="img/product_06.jpg" alt="" title="5 tubes of B12+ Cream 60g">
+					<p class="original">original price: <span>$189.75</span></p>
+					<h1>$169.95</h1>
+					<h3><strong>10% OFF</strong></h3>
+					<asp:button CssClass="buy" runat="server" CommandArgument="6" OnClick="Add2Cart_Click" Text="Add to Cart" />
+				</div>
+			</div>
+
+			<div class="col-12of14 cart">
+				<h5>SHOPPING CART</h5>
+				<div class="col-6of12 cart-header c1">
+					<h3>Item</h3>
+				</div>
+				<div class="col-2of12 cart-header hide-response">
+					<h3>Unit Price</h3>
+				</div>
+				<div class="col-2of12 cart-header">
+					<h3>Quantity</h3>
+				</div>
+				<div class="col-2of12 cart-header">
+					<h3>Total Price</h3>
+				</div>
+				<asp:Repeater id="TheRepeater" runat="server">
+					<HeaderTemplate></HeaderTemplate>
+				    <ItemTemplate>
+						<div class="col-6of12 cart-body c1">
+							<p><strong><%# DataBinder.Eval(Container.DataItem, "Desc") %></strong></p>
+						</div>
+						<div class="col-2of12 cart-body hide-response">
+							<p><strong><%# DataBinder.Eval(Container.DataItem, "Price","{0:c}") %></strong></p>
+						</div>
+						<div class="col-2of12 cart-body quantity">
+							<div runat="server" class='<%# IIf(Eval("Price") < 0.01,"HideQty","") %>'>
+								<asp:textbox runat="server" id="Quantity" type="number" min="1" max="99" text='<%# DataBinder.Eval(Container.DataItem, "Quantity") %>' />
+								<asp:Button id="UpdateQty" runat="server" autopostback="true" onClick="UpdateQuantity" text="" CommandArgument = '<%# DataBinder.Eval(Container.DataItem, "ID") %>' />
+								<a href="04_cart.aspx?D=1&I=<%# DataBinder.Eval(Container.DataItem, "ID") %>">	
+					            	<img class="cart-remove" src="img/remove.png" alt="button to remove products from shopping cart" >
+					            </a>
+			               	</div>
+							<div runat="server" class='<%# IIf(Eval("Price") < 0.01,"","HideQty") %>'>&nbsp;</div>
+						</div>
+						<div class="col-2of12 cart-body">
+							<p><strong><%# DataBinder.Eval(Container.DataItem, "TotalPrice","{0:c}") %></strong></p>
+						</div>
+	  				</ItemTemplate>
+		      		<FooterTemplate></FooterTemplate>
+				</asp:Repeater>
+
+				<div class="right" id="total">
+					<h3>Sub Total: </h3><h1><asp:Label id="SubTotal" runat="server" /></h1>
+				</div>
+			</div>
+
+
+			<div class="col-12of14 check-out" id="TheCart" runat="server">
+				<div class="col-10of12 right coupon" id="Voucher">
+					<asp:Panel id="CouponPanel" runat="server" defaultbutton="VoucherButton">
+					  <asp:Textbox id="VoucherCodeDisplay" runat="server" placeholder="Enter coupon code" /><asp:Button id="VoucherButton" runat="server" Text="Apply" OnClick="DoCoupon"/> 												
+					</asp:Panel>
+				</div>
+				<div class="col-10of12 right">
+					<a class="buy right" id="checkout" href="https://www.b12cream.com/04_checkout_new.aspx">CheckOut</a>
+				</div>
+			</div>
+	     
+		    <div class="grid shopping-cart" id="EmptyCart" runat="server">
+				<div class="col-12of14 product">
+		    		<h5 class="red">Your Shopping cart is empty!</h5>
+	            </div>
+		    </div>
+	     
+		</div>
+
+	</form>
+	
+	<!--#include file="footer.aspx"-->
+	
+
+<script src="js/cart.js"></script>
+<script src="js/ios_doubleTap_disable.js"></script>
+</body>
+</html>

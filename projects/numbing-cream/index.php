@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+   
+   	<title>Bioevolve Numbing Cream - Achieve Beauty pain free</title>
+	<meta name="description" content="Bioevolve Numbing Cream, the highest percentage numbing cream that contains three kinds of anesthetic. It acts faster, lasts longer and is pain free. ">
+
+	<!-- Bootstrap -->
+	<script src="js/jquery.min.js"></script>
+	<script src="bootstrap/dist/js/bootstrap.min.js"></script>
+	<link href="bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
+
+	<!-- jQuery UI -->
+	<link rel="stylesheet" href="js/jquery-ui/jquery-ui.min.css">
+	<script src="js/jquery-ui/external/jquery/jquery.js"></script>
+	<script src="js/jquery-ui/jquery-ui.min.js"></script>
+
+	<!-- CSS -->
+	<link href="css/main.css" type="text/css" rel="stylesheet">
+
+	<!-- Owl carousel -->
+	<link rel="stylesheet" href="js/owl-carousel/owl-carousel/owl.carousel.css">
+	<link rel="stylesheet" href="js/owl-carousel/owl-carousel/owl.theme.css">
+	<script src="js/owl-carousel/owl-carousel/owl.carousel.js"></script>
+</head>
+
+<body>
+<div class="wrapper">
+
+	<?php include("header.html"); ?>
+
+	<div id="homeBanner">
+		<div id="bannerSkin"></div>
+		<img class="bg-icon" src="img/home_banner_laser.png" id="laser" alt="">
+		<div class="container">
+			<img src="img/numb_all_right.png" alt="4 sizes of bioevolve numbing cream" title="numbing cream 15g, 30g, 60g and 100g" id="numbAll">
+	 		<img class="bg-icon" src="img/home_banner_needle.png" id="needle" alt="">
+	 		<img class="bg-icon" src="img/home_banner_tattoo.png" id="tattoo" alt="">
+			<h1>BIOEVOLVE <br> NUMBING CREAM</h1> 
+			<h3>Achieve beauty, <br><span>PAIN FREE</span></h3>
+			<a href="buynow.aspx" class="custom-button">BUY NOW</a>
+		</div>
+		<div class="share-this">
+			<span>SHARE THIS</span>
+			<!-- facebook share button -->
+			<img class="icon" src="img/icon_share.png" alt="share">
+		</div>
+	</div>
+
+	
+	<div class="bg-grey-2">
+		<div class="container">
+			<h2 class="light-green">Triple anesthetic, Triple action</h2>
+			<h1>A NUMBING CREAM THAT CONTAINS 3 ANESTHETICS. </h1>
+			<div class="row" id="homeTriple">
+				<div class="col-md-4">
+					<figure>
+						<img src="img/icon_triple_01.png" alt="triple effect">
+					</figure>
+					<h3>01<br>ANESTHETIC</h3>
+					<h4>Induces insensitivity to pain.</h4>
+				</div>
+				<div class="col-md-4">
+					<figure>
+						<img src="img/icon_triple_02.png" alt="triple effect">
+					</figure>
+					<h3>02<br>ANALGESIC</h3>
+					<h4>Relief from pain</h4>
+				</div>
+				<div class="col-md-4">
+					<figure>
+						<img src="img/icon_triple_03.png" alt="triple effect">
+					</figure>
+					<h3>03<br>ANTIPRURITIC</h3>
+					<h4>Inhibit the itching</h4>
+				</div>
+			</div>
+
+			<div id="homeAbout">
+				<h1>ABOUT <span class="light-green">BIOEVOLVE NUMBING CREAM</span></h1>
+				<div id="owlAbout" class="owl-carousel">
+					<div class="about-content"> 
+						<p>Bioevolve Numbing Cream is local anesthetic, analgesic and antipruritic which contains 3 anesthetics. It is the strongest and highest percentage numbing cream available without added preservatives!</p>
+						<p>Achieving beauty is a difficult journey and many of us turn to cosmetic procedures to achieve this goal. Often pain is associated with these cosmetic treatments as they achieve results with the usage of needles or lasers. Now you can enjoy the journey to beauty without pain by using Bioevolve Numbing cream, a breakthrough anesthetic cream that numbs your skin faster and longer and is available without a prescription.</p>
+						<a href="#homeProductInfo" class="custom-button size-l green anchor-jumper" title="More information about the product">Learn more...</a>
+					</div>
+					<div class="about-video"> 
+						<div class="video-container">
+	         				<iframe src="https://www.youtube.com/embed/8DuIBzCXtos" width="560" height="315"></iframe>
+						</div>
+					</div>
+				</div>
+
+				
+			</div>
+
+		</div>
+	</div>
+
+	<div id="homeProductList">
+		<div class="container">
+			<div class="col-md-3">
+				<img src="img/numb_15.png" alt="Numb cream">
+				<h3>
+					<span class="title-add">15g</span>
+					$19.50
+					<a href=""><img class="icon-cart" src="img/icon_cart_white.png" alt="cart icon"></a>
+				</h3>
+
+				<ul class="nav nav-tabs sale-price" role="tablist">
+				    <li role="presentation"><a href="#buy2x15" aria-controls="buy2x15" role="tab" data-toggle="tab">2x - <mark>5% OFF</mark></a></li>
+				    <li role="presentation"><a href="#buy5x15" aria-controls="buy5x15" role="tab" data-toggle="tab">5x - <mark>13% OFF</mark></a></li>
+				</ul>
+			  	<div class="tab-content">
+				    <div role="tabpanel" class="tab-pane" id="buy2x15">
+				    	<h1>
+				    		$37.00
+				    		<a href=""><img class="icon-cart" src="img/icon_cart_grey.png" alt="cart icon"></a>
+				    	</h1>
+				    	<span class="cross-out">$39.00</span>
+				    </div>
+				    <div role="tabpanel" class="tab-pane" id="buy5x15">
+				    	<h1>
+				    		<a href=""><img class="icon-cart" src="img/icon_cart_grey.png" alt="cart icon"></a>
+				    		$85.25
+				    	</h1>
+				    	<span class="cross-out">$97.50</span>
+				    </div>
+			  	</div>
+			</div>
+			<div class="col-md-3">
+				<img src="img/numb_30.png" alt="Numb cream">
+				<h3>
+					<span class="title-add">30g</span>
+					$28.77
+					<a href=""><img class="icon-cart" src="img/icon_cart_white.png" alt="cart icon"></a>
+				</h3>
+
+				<ul class="nav nav-tabs sale-price" role="tablist">
+				    <li role="presentation"><a href="#buy2x30" aria-controls="buy2x30" role="tab" data-toggle="tab">2x - <mark>4% OFF</mark></a></li>
+				    <li role="presentation"><a href="#buy5x30" aria-controls="buy5x30" role="tab" data-toggle="tab">5x - <mark>11% OFF</mark></a></li>
+				 </ul>
+			  	<div class="tab-content">
+				    <div role="tabpanel" class="tab-pane" id="buy2x30">
+				    	<h1>
+				    		$55.48
+				    		<a href=""><img class="icon-cart" src="img/icon_cart_grey.png" alt="cart icon"></a>
+				    	</h1>
+				    	<span class="cross-out">$57.54</span>
+				    </div>
+				    <div role="tabpanel" class="tab-pane" id="buy5x30">
+				    	<h1>
+				    		<a href=""><img class="icon-cart" src="img/icon_cart_grey.png" alt="cart icon"></a>
+				    		$128.65
+				    	</h1>
+				    	<span class="cross-out">$143.85</span>
+				    </div>
+			  	</div>
+			</div>
+			<div class="col-md-3">
+				<img src="img/numb_60.png" alt="Numb cream">
+				<h3>
+					<span class="title-add">60g</span>
+					$49.36
+					<a href=""><img class="icon-cart" src="img/icon_cart_white.png" alt="cart icon"></a>
+				</h3>
+
+				<ul class="nav nav-tabs sale-price" role="tablist">
+				    <li role="presentation"><a href="#buy2x60" aria-controls="buy2x60" role="tab" data-toggle="tab">2x - <mark>4% OFF</mark></a></li>
+				    <li role="presentation"><a href="#buy5x60" aria-controls="buy5x60" role="tab" data-toggle="tab">5x - <mark>11% OFF</mark></a></li>
+				 </ul>
+			  	<div class="tab-content">
+				    <div role="tabpanel" class="tab-pane" id="buy2x60">
+				    	<h1>
+				    		$94.60
+				    		<a href=""><img class="icon-cart" src="img/icon_cart_grey.png" alt="cart icon"></a>
+				    	</h1>
+				    	<span class="cross-out">$98.72</span>
+				    </div>
+				    <div role="tabpanel" class="tab-pane" id="buy5x60">
+				    	<h1>
+				    		<a href=""><img class="icon-cart" src="img/icon_cart_grey.png" alt="cart icon"></a>
+				    		$218.75
+				    	</h1>
+				    	<span class="cross-out">$246.80</span>
+				    </div>
+			  	</div>
+			</div>
+			<div class="col-md-3">
+				<img src="img/numb_500.png" alt="Numb cream">
+				<h3>
+					<span class="title-add">100g</span>
+					$263.36
+					<a href=""><img class="icon-cart" src="img/icon_cart_white.png" alt="cart icon"></a>
+				</h3>
+
+				<ul class="nav nav-tabs sale-price" role="tablist">
+				    <li role="presentation"><a href="#buy2x500" aria-controls="buy2x500" role="tab" data-toggle="tab">2x - <mark>7% OFF</mark></a></li>
+				 </ul>
+			  	<div class="tab-content">
+				    <div role="tabpanel" class="tab-pane" id="buy2x500">
+				    	<h1>
+				    		$488.92
+				    		<a href=""><img class="icon-cart" src="img/icon_cart_grey.png" alt="cart icon"></a>
+				    	</h1>
+				    	<span class="cross-out">$526.94</span>
+				    </div>
+			  	</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="bg-grey-2" id="homeProductInfo">
+		<div class="container container-padding">
+			<div class="header-block">
+				<h1>PRODUCT INFORMATION</h1>
+			</div>
+			<div class="row">
+				<div class="col-md-3 side-nav">
+				    <ul class="nav nav-tabs" role="tablist">
+					     <li class="active">
+					      	<a href="#infoUse" role="tab" data-toggle="tab">Usage</a>
+					    </li>
+					    <li >
+					    	<a href="#infoDir" role="tab" data-toggle="tab">Directions</a>
+					    </li>
+					    <li>
+					        <a href="#infoCaution" role="tab" data-toggle="tab">Notice</a>
+					    </li>
+					    <li>
+				          	<a href="#infoFAQ" role="tab" data-toggle="tab">FAQ</a>
+					    </li>
+				    </ul>
+				</div>
+			    
+			    <div class="col-md-9 tab-content">
+			      	<div class="tab-pane fade active in" id="infoUse">
+			      		<div class="row">
+			      			<div class="col-sm-6">
+				          		<h2>When to Use</h2>
+					          	<p class="margin-bottom-false">Apply Bioevolve Numbing cream to minimize the pain:</p>
+					          	<ul id="contentUsage">
+						          	<li><a class="highlight" href="#usage00">Usage of Needles</a></li>
+						          	<li><a href="#usage01">Waxing / Laser Hair Removal</a></li>
+									<li><a href="#usage02">IV insertion</a></li>
+									<li><a href="#usage03">Blood Tests / Blood Donation</a></li>
+									<li><a href="#usage04">Vaccination / Immunization</a></li>
+									<li><a href="#usage05">Cannulations</a></li>
+									<li><a href="#usage06">Micro-Dermabrasion</a></li>
+									<li><a href="#usage07">Laser Treatments</a></li>
+									<li><a href="#usage08">Tattooing / tattoo Removal</a></li>
+					          	</ul>
+					          	<p>Fast Acting and Longer Numbing Times</p>
+				          	</div>
+				          	<div class="col-sm-6" id="imagesUsage">
+				          		<div class="highlight" id="usage00" style="background-image:url('img/use-group_0.jpg')"></div>
+				          		<div id="usage01" style="background-image:url('img/use-group_1.jpg')"></div>
+				          		<div id="usage02" style="background-image:url('img/use-group_2.jpg')"></div>
+				          		<div id="usage03" style="background-image:url('img/use-group_3.jpg')"></div>
+				          		<div id="usage04" style="background-image:url('img/use-group_4.jpg')"></div>
+				          		<div id="usage05" style="background-image:url('img/use-group_5.jpg')"></div>
+				          		<div id="usage06"  style="background-image:url('img/use-group_6.jpg')"></div>
+				          		<div id="usage07" style="background-image:url('img/use-group_7.jpg')"></div>
+				          		<div id="usage08" style="background-image:url('img/use-group_8.jpg')"></div>
+				          	</div>	
+			          </div>
+			      	</div>
+			      	<div class="tab-pane fade" id="infoDir">
+			        	<h2>Directions</h2>
+			          	<p>Apply before injection, tattoo or laser surgery or as directed by physician or trained professional. Numbing time will vary according to procedure. Typical numbing time occurs in 30-45 minutes and can last for 3 hours depending upon the method of application. Dressing after application generally is not required. </p>
+			          	<p>Consult your doctor before using dressing along with application of the numbing cream. Maximum recommended dose for adults: 0.5 grams per dose. (approximately 0.75 inches or 1.8 cm in length of a ribbon of cream dispensed from the tube). For geriatrics, pediatric, and patients with other underlying conditions (eg. kidney and liver impaired) consult the doctor for dosing adjustments.</p>
+			          
+						<div class="direction">
+							<figure>
+							  	<img src="img/direction_1.png" alt="direction figure 1">
+							  	<figcaption>Figure 1. Wash the area you wish to numb with soap and water. Dry area completely</figcaption>
+							</figure>
+							<figure>
+							  	<img src="img/direction_2.png" alt="direction figure 1">
+							  	<figcaption>Figure 2. Apply a generous amount of numbing cream onto the skin and rub it into the skin for a minute.</figcaption>
+							</figure>
+							<figure>
+							  	<img src="img/direction_3.png" alt="direction figure 1">
+							  	<figcaption>Figure 3. If deep numbing effect is desired, cover the cream with plastic wrap (saran wrap).</figcaption>
+							</figure>
+							<figure >
+							  	<img src="img/direction_4.png" alt="direction figure 1">
+							  	<figcaption>Figure 4. Once numbed, wipe off the numbing cream with damped cloth or tissue paper.</figcaption>
+							</figure>
+						</div>
+						<p>It is best to apply the cream 30-40 minutes before the procedure. A minimum 10-15 minutes.</p>
+			      	</div>
+			      	<div class="tab-pane fade" id="infoCaution"	>
+			          	<h2>Power of 3 numbing agents:</h2>
+			          	<ul>
+				          	<li>Benzocaine 20%</li>
+				          	<li>Lidocaine 6%</li>
+				          	<li>Tetracaine 4%</li>
+			          	</ul>
+			          	<h2>Caution</h2>
+			          	<p>For external use on intact and healthy skin only. Avoid applying to open wounds, near or inside the eyes, burns, rashes, (including diaper rash). Discontinue use and consult a doctor promptly if conditions worsen or if symptoms persist for more than 7 days. Do not use if allergic to benzocaine, lidocaine, tetracaine or any other ‘caine’ type of anesthetics.</p>
+			          	<h2>Storage</h2>
+			          	<ul>
+				          	<li>Store between 15-30oC.</li>
+				          	<li>Protect from light and freezing.</li>
+				          	<li>Keep out of reach of children.</li>
+			          	</ul>
+			      	</div>
+			      	<div class="tab-pane fade" id="infoFAQ">
+			      		<h2>FAQ</h2>
+			      		<div class="panel list-group">
+			      			<a class="list-group-item" data-toggle="collapse" data-target="#faq1" data-parent="#infoFAQ"><h3>How do the three active ingredients work?</h3></a>
+ 							<div id="faq1" class="collapse">
+ 								<p>Each active ingredient numb the skin at different rate and time. Numbing effect of benzocaine is fast but only numbs for a short time; numbing effect of lidocaine is slower than benzocaine but lasts longer than benzocaine; finally numbing effect of tetracaine starts later than benzocaine and lidocaine, but numbing effect last the longest. This combination results in overall quick and long lasting numbing effect from this product.</p>
+ 							</div>
+ 							
+ 							<a class="list-group-item" data-toggle="collapse" data-target="#faq2" data-parent="#infoFAQ"><h3>Why is bioevolve numbing cream oil base?</h3></a>
+ 							<div id="faq2" class="collapse">
+ 								<p>Oil based cream adheres to the skin better and last longer on skin.</p>
+ 							</div>
+ 							<a class="list-group-item" data-toggle="collapse" data-target="#faq3" data-parent="#infoFAQ"><h3>Are there any harmful preservatives added?</h3></a>
+ 							<div id="faq3" class="collapse">
+ 								<p>Absolutely not. We do not add any harmful or potentially questionable ingredients (e.g. parabens) to our product as they can harm your skin and body.</p>
+ 							</div>
+ 							
+ 							<a class="list-group-item" data-toggle="collapse" data-target="#faq4" data-parent="#infoFAQ"><h3>The colour of the cream is yellowish brown, is this normal?</h3></a>
+ 							<div id="faq4" class="collapse">
+ 								<p>Yes it is. Again, we do not use any preservatives or cream whiteners in our product. So that is the natural colour of the finished product. Over time this cream will brown even more as the oil is oxidizing. This is normal and will not harm the product.</p>
+ 							</div>
+ 							<a class="list-group-item" data-toggle="collapse" data-target="#faq5" data-parent="#infoFAQ"><h3>What is the pH of your product?</h3></a>
+ 							<div id="faq5" class="collapse">
+ 								<p>Our product tested in the 5.5 pH range.</p>
+ 							</div>
+			      		</div>
+			      	</div>
+			    </div>
+			</div>
+		</div>
+	</div>
+
+	<div class="header-page bottom" id="headerEnd">
+		<div class="container">
+			<h4>Make your cosmetic treatments pain-free....</h4>
+		</div>
+	</div>
+	
+	<!--#include file="footer.aspx"-->
+
+</div>
+
+
+
+<!-- page specific -->
+<script src="js/page_general.js"></script>
+<script src="js/homepage.js"></script>
+<script src="js/carousel-about.js"></script>
+</body>
+
+</html>
