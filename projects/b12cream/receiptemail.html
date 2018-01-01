@@ -1,0 +1,102 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+	<title>b12cream.com</title>
+</head>
+
+<body>
+	<p>Dear {{ShipFName}} {{ShipLName}}  </p>
+	<p>Here is your invoice for your order from b12cream.com. Your feedback is important to us. If you have any comments or suggestions so we can improve our services, please email us at contact@b12cream.com.</p>
+	<p>Re-Ordering from us is easy. <br />
+	Simply use your  login information (below) at check out when ordering on our website.  You can also phone your order at 1-877-998-2272 (TOLL FREE) or +1-604-278-7955.</p>
+	<table width="550" border="0" cellspacing="1" cellpadding="5">
+		<tr>
+			<td width="246" rowspan="2">Please keep this invoice <br />
+			as it contains important information.</td>
+			<td width="109" bgcolor="#669966"><b><font color="#FFFFFF">Username</font></b></td>
+			<td width="219" bgcolor="#f1fff3">{{ShipEmail}} </td>
+		</tr>
+		<tr>
+			<td bgcolor="#669966"><b><font color="#FFFFFF"> Password</font></b></td>
+			<td bgcolor="#f1fff3">{{Password}}</td>
+		</tr>
+	</table>  
+
+	<br />
+	<img src="http://www.bioevolve.com/images/bioevolve%20logo22.png" width="200" height="50" />
+	<br />
+
+	Invoice #: {{Invoice}} <br />
+	Date: {{Date}} <br />
+	-------------------------------------------------------------------------------------------------------
+	<table width="550" border="0" cellspacing="1" cellpadding="5">
+		<tr>
+			<td bgcolor="#ccff66"><b>SHIPPING INFORMATION</b></td>
+			<td bgcolor="#ccff66"><b>BILLING INFORMATION</b></td>
+		</tr>
+		<tr>
+			<td bgcolor="#FFFFFF"> {{ShipFName}} {{ShipLName}}</td>
+			<td bgcolor="#FFFFFF">{{BillFName}} {{BillLName}}</td>
+		</tr>
+		<tr>
+			<td bgcolor="#FFFFFF">{{ShipAddress}}</td>
+			<td bgcolor="#FFFFFF">{{BillAddress}}</td>
+		</tr>
+		<tr>
+			<td bgcolor="#FFFFFF">{{ShipCity}}, {{ShipState}},</td>
+			<td bgcolor="#FFFFFF">{{BillCity}}, {{BillState}}</td>
+		</tr>
+		<tr>
+			<td bgcolor="#FFFFFF">{{ShipZip}}, {{ShipCountry}}</td>
+			<td bgcolor="#FFFFFF">{{BillZip}}, {{BillCountry}}</td>
+		</tr>
+	</table>
+
+	<table width="550" border="0" cellspacing="1" cellpadding="5">
+		<tr>
+			<td colspan="2" bgcolor="#ccff66"><b>ORDER DETAILS</b></td>
+		</tr>
+		<tr>
+			<td width="335" bgcolor="#f2f2f2">Item Descriptions</td>
+			<td width="192" bgcolor="#f2f2f2">Total</td>
+		</tr>
+	{{AllItems}}
+	</table>
+
+	<table width="550" border="0" cellspacing="1" cellpadding="5">
+		<tr>
+			<td width="335" align="right" bgcolor="#FFFFFF">
+				Shipping:<br />
+				{{ShipType}}
+			</td>
+			<td width="192" valign="top" bgcolor="#FFFFFF">{{ShipPrice}}</td>
+		</tr>
+	</table>
+
+	{{GST}}
+	{{PST}}
+
+	<table width="550" border="0" cellspacing="1" cellpadding="5">
+		<tr>
+			<td width="335" align="right" bgcolor="#FFFFFF"><b>Grand Total</b></td>
+			<td width="192" bgcolor="#FFFFFF">{{Grandtotal}}</td>
+		</tr>
+	</table>
+
+	<p>Your credit card will be charged by Biosense Compounding Pharmacy.<br />
+		<strong>Biosense Pharmacy </strong>145-13988 Maycrest Way, Richmond BC V6V 3C3<strong><br />
+		</strong></p>
+	<p>
+		<strong>TOLL FREE TEL:</strong> 1-877-998-2272 or Local:   604-278-7955 <br />
+		<strong>TOLL FREE FAX: </strong>1-877-832-7960 or local:   604-278-7960<br />
+	</p>
+	<p>
+		You received this e-mail because you have shopped for your product(s) at b12cream.com
+		If you believe this was done by somebody else who used your email address, please notify us immediately. Please forward this email to: contact@b12cream.com
+		
+		(C) 2015 b12cream.com All Rights Reserved.</p>
+	</p>
+</body>
+</aspx>
