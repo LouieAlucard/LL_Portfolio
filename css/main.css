@@ -424,7 +424,7 @@ ul li {
 .module-content#shopify::after {
   background-image: url("../img/project_cover_shopify.jpg");
   background-size: 100% auto;
-  background-position: 0 95%;
+  background-position: 0 94%;
 }
 
 .module-content#numb::after {
