@@ -6,8 +6,8 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<meta name="google-site-verification" content="XfKWWLi0FPTu1AT50PqB3wAH_Gyi0fiaceOT_3gxm_E" />
    
-   	<title>Home | Bioevolve B12 Plus+ Cream</title>
-	<meta name="description" content="Bioevolve B12 Plus+ Cream, a multi-functional regenerating cream, is a must have for you and your family.">
+   	<title>Home | BioZkin B12 Plus+ Cream</title>
+	<meta name="description" content="BioZkin B12 Plus+ Cream, a multi-functional regenerating cream, is a must have for you and your family.">
 
 	<!-- Bootstrap -->
 	<link href="bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -25,7 +25,61 @@
 </head>
 
 <body>
-	<!--#include file="header.aspx"-->
+	<div class="grid col-12">
+	<nav class="navbar navbar-default nav-bioevolve" role="navigation">
+		<div class="container-fluid">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a href="index.html" class="navbar-brand">
+                    <img src="img/bioevolve_logo.png" alt="BioZkin Brand" id="navLogo">
+                </a>
+	        </div>
+            <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                <ul class="nav navbar-nav"><li><a href="index.html">B12</a></li>
+                    <li><a href="01_about.html">Brand</a></li>
+                    <li><a href="02_ship.html">Shipping</a></li>
+                    <li><a href="03_contact.html">Contact</a></li>
+                    <li><a href="05_wholesale.html">Wholesale</a></li>
+                    <li><a href="07_termsandconditions.html">Policy</a></li>
+                </ul>
+                <ul class="nav navbar-nav navbar-right">
+                	<li>							
+                		<a href="">Hello Customer</a>
+                		<ul class="dropdown">
+                			<li><a href="06_account.html">My Account</a></li>
+						    <li><a href="06_history.html">Order History</a></li>
+						    <li><a href="06_login.html?L=O">Log Out</a></li>
+						</ul>
+					</li>
+	            	<li><a href="/04_cart.html">Shopping Cart</a></li>
+	            </ul>
+	        </div>
+	    </div>
+	</nav>
+	<div class="free-shipping">
+		<img src="img/freeshipping-box-icon.png" alt="free shipping icon">
+		<p>
+			Free expedited shipping to North America on orders $99 or more. 
+			Free Xpresspost shipping Internationally on orders $199 or more.
+		</p>
+		<img src="img/freeshipping.png" alt="free shipping icon">
+	</div>
+</div>
+
+<script>
+$(function() {
+    if (location.pathname.split("/")[1] == "") {
+        $('nav a[href^="/index.html"]').addClass('active');
+    } else {
+        $('nav a[href^="/' + location.pathname.split("/")[1] + '"]').addClass('active');
+    }
+});
+</script>
 	
 	<div class="grid fixme">
 		<div class="col-12of14 nav-cream">
@@ -36,12 +90,6 @@
 	                <li><a href="#anchorBenefits"><h2>benefits</h2></a></li>
                     <li><a href="#anchorSafety"><h2>safety</h2></a></li>
 	            </ul>
-			</div>
-			<div class="right">
-				<a class="buy" href="04_cart.aspx" id="buyNow">
-					Summer Promotion
-					<img src="/img/icon-summer-promo.png" alt="">
-				</a>
 			</div>
 		</div>
 		<div id="sectionNavResponsive">
@@ -121,12 +169,12 @@
 			<img src="img/b12cream.png" alt="B12 Cream" class="b12cream show-response" alt="">
 			<h1>Get More Than You Expect</h1>
 			<h4>A multifunctional regenerating cream suitable for all skin conditions</h4>
-			<p>Bioevolve B12 Plus+ is a multifunctional regenerating cream containing vitamin B12 (methylcobalamin) as the main active ingredient. Methylcobalamin is the most active form of B12. It absorbs very quickly and is immediately ready for use by our body. Unlike cyanocobalamin, no conversion is required. B12 Plus+ Cream is also clinically proven to be safe, effective, and well tolerated. This product is unscented and non-greasy with fast absorption rate.</p>
+			<p>BioZkin B12 Plus+ is a multifunctional regenerating cream containing vitamin B12 (methylcobalamin) as the main active ingredient. Methylcobalamin is the most active form of B12. It absorbs very quickly and is immediately ready for use by our body. Unlike cyanocobalamin, no conversion is required. B12 Plus+ Cream is also clinically proven to be safe, effective, and well tolerated. This product is unscented and non-greasy with fast absorption rate.</p>
 			<blockquote>"Ethical Science - Conscience completes our Science"</blockquote>
 			<div>
-				<iframe class="video-custom" src="https://www.youtube.com/embed/Tyb8VtO2FFw" allowfullscreen></iframe>
+				<iframe class="video-custom" src="https://www.youtube.com/embed/3f-TGXp0ZOk" allowfullscreen></iframe>
 			</div>
-			<button class="buy"><a href="04_cart.aspx">Buy Now</a></button>
+			<button class="buy"><a href="04_cart.html">Buy Now</a></button>
 		</div>
 	</div>
 
@@ -172,7 +220,7 @@
 				<div class="module-content text" id="regen">
 					<div id="regenPart01">
 						<h1>Powerful Regenerating Effects<span class="anchor-custom" id="anchorPower">*</span></h1>
-						<p>Bioevolve B12 Plus+ cream's powerful regenerating effect makes it an unique All-In-One product to improve chronic skin conditions such as eczema, dermatitis, psoriasis, diaper rashes and many more hard-to-deal-with skin conditions.</p>
+						<p>BioZkin B12 Plus+ cream's powerful regenerating effect makes it an unique All-In-One product to improve chronic skin conditions such as eczema, dermatitis, psoriasis, diaper rashes and many more hard-to-deal-with skin conditions.</p>
 						<ul class="col2">
 							<li>
 								<div><img src="img/regen_icon07.png" alt=""></div>
@@ -332,7 +380,7 @@
 
 	<div class="grid social-media">
 		<div class="col-14of14">
-			<a href="04_cart.aspx"><button class="buy hide-response">Buy Now</button></a>
+			<a href="04_cart.html"><button class="buy hide-response">Buy Now</button></a>
 			<ul>
 				<li><a href="https://www.facebook.com/pages/B12-Cream/1617578868455223?fref=ts" target="_blank" title="B12 Plus+ cream Facebook page">
 					<img src="img/media_facebook.png" alt="button links to B12 Plus+ cream Facebook page" title="Facebook icon">
@@ -357,7 +405,7 @@
 		</div>
 	</div>
 
-	<!--#include file="footer.aspx"-->
+	<!--#include file="footer.html"-->
 
 <script src="js/home-nav.js"></script>
 <script src="js/ios_doubleTap_disable.js"></script>

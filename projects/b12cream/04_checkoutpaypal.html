@@ -1,6 +1,6 @@
 <%@ Page Language="VB" %>
 <%@ Import Namespace = "System.Data.SqlClient" %>
-<!--#include file="/conn/conn.aspx"-->
+<!--#include file="/conn/conn.html"-->
 <script language="VB" runat="server">
 
 	Public TheGrandtotal As Single
@@ -8,7 +8,7 @@
 	Public TheFullName As String
 	
 	Protected Overrides Sub OnError(ByVal e as System.EventArgs) 
-		Response.Redirect("http://www.b12cream.com/index.aspx")
+		Response.Redirect("http://www.b12cream.com/index.html")
 	End Sub
 
 
@@ -31,10 +31,10 @@
         Dim dr As SqlDataReader
         Dim sql As New SqlCommand
      	'If Session("ClientID") < 1 Then
-      		'Response.Redirect("/viewcart.aspx")
+      		'Response.Redirect("/viewcart.html")
        	'End If
 		If Request.QueryString("custom") = "returned" or Request.Form("custom") = "returned" Then
-			Response.Redirect("https://www.b12cream.com/04_thankyou.aspx?P=P")
+			Response.Redirect("https://www.b12cream.com/04_thankyou.html?P=P")
 		End If		
 
 
@@ -57,7 +57,7 @@
             Conn.Close()
             dr = Nothing
             conn = Nothing
-            Response.Redirect("http:/www.b12cream.com/index.aspx")
+            Response.Redirect("http:/www.b12cream.com/index.html")
 
         End If
 		
@@ -70,7 +70,7 @@
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
    
-   	<title>Check out by PayPal| Bioevolve B12 Plus+ Cream</title>
+   	<title>Check out by PayPal| BioZkin B12 Plus+ Cream</title>
 	<meta name="description" content="check out page using PayPal as billing method">
 
 	<!-- Bootstrap -->
@@ -84,7 +84,61 @@
 </head>
 
 <body>
-	<!--#include file="header.aspx"-->
+	<div class="grid col-12">
+	<nav class="navbar navbar-default nav-bioevolve" role="navigation">
+		<div class="container-fluid">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a href="index.html" class="navbar-brand">
+                    <img src="img/bioevolve_logo.png" alt="BioZkin Brand" id="navLogo">
+                </a>
+	        </div>
+            <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                <ul class="nav navbar-nav"><li><a href="index.html">B12</a></li>
+                    <li><a href="01_about.html">Brand</a></li>
+                    <li><a href="02_ship.html">Shipping</a></li>
+                    <li><a href="03_contact.html">Contact</a></li>
+                    <li><a href="05_wholesale.html">Wholesale</a></li>
+                    <li><a href="07_termsandconditions.html">Policy</a></li>
+                </ul>
+                <ul class="nav navbar-nav navbar-right">
+                	<li>							
+                		<a href="">Hello Customer</a>
+                		<ul class="dropdown">
+                			<li><a href="06_account.html">My Account</a></li>
+						    <li><a href="06_history.html">Order History</a></li>
+						    <li><a href="06_login.html?L=O">Log Out</a></li>
+						</ul>
+					</li>
+	            	<li><a href="/04_cart.html">Shopping Cart</a></li>
+	            </ul>
+	        </div>
+	    </div>
+	</nav>
+	<div class="free-shipping">
+		<img src="img/freeshipping-box-icon.png" alt="free shipping icon">
+		<p>
+			Free expedited shipping to North America on orders $99 or more. 
+			Free Xpresspost shipping Internationally on orders $199 or more.
+		</p>
+		<img src="img/freeshipping.png" alt="free shipping icon">
+	</div>
+</div>
+
+<script>
+$(function() {
+    if (location.pathname.split("/")[1] == "") {
+        $('nav a[href^="/index.html"]').addClass('active');
+    } else {
+        $('nav a[href^="/' + location.pathname.split("/")[1] + '"]').addClass('active');
+    }
+});
+</script>
 
 
 	<div class="grid shopping-cart" id="pageCheckout">
@@ -101,7 +155,7 @@
 				<input type="hidden" name="amount_1" value="<%= TheGrandtotal %>">
 				<input type="hidden" name="currency_code" value="<%= TheCurrency %>">
 				<input type="hidden" name="invoice" value="<%= Session("Invoice") %>">
-				<input type="hidden" name="return" value="https://www.biosensehealth.com/thankyou.aspx?P=P">
+				<input type="hidden" name="return" value="https://www.biosensehealth.com/thankyou.html?P=P">
 				<input type="hidden" name="custom" value="returned">
 				<input type="hidden" name="img_url" value="https://www.biosenseclinical.com/Images/150x50paypal.png">
 				<input type="hidden" name="cpp_cart_border_color" value="74ba00">
@@ -117,7 +171,7 @@
 	</div>
 
 
-	<!--#include file="footer.aspx"-->
+	<!--#include file="footer.html"-->
 	
 
 

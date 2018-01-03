@@ -11,7 +11,7 @@ $( document ).ready(function() {
 			        '<span class="icon-bar"></span>'+
 			      	'</button>'+
 			      	'<a class="navbar-brand" href="#">'+
-			      		'<img class="bioevolve-brand" src="img/bioevolve_logo.png" alt="Bioevolve Brand">'+
+			      		'<img class="bioevolve-brand" src="img/bioevolve_logo.png" alt="BioZkin Brand">'+
 			      	'</a>'+
 			      	'<div class="nav-icons">'+
 			      		'<a href="#">'+
@@ -36,7 +36,7 @@ $( document ).ready(function() {
 			      	'<ul class="nav navbar-nav">'+
 	                    '<li><a href="#">ABOUT</a></li>'+
 	                    '<li><a href="#">SHIPPING</a></li>'+
-	                    '<li class="brand-holder"><a  href="#"><img class="bioevolve-brand" src="img/bioevolve_logo.png" alt="Bioevolve Brand"></a></li>'+
+	                    '<li class="brand-holder"><a  href="#"><img class="bioevolve-brand" src="img/bioevolve_logo.png" alt="BioZkin Brand"></a></li>'+
 	                    '<li><a href="#">PRODUCTS</a></li>'+
 	                    '<li><a href="#">CONTACT</a></li>'+
                 	'</ul>'+
@@ -65,7 +65,7 @@ $( document ).ready(function() {
 						'<div class="nav-container">'+
 			  				'<h1>About</h1>'+
 							'<ul class="nav">'+
-								'<li><a href="#">Bioevolve</a></li>'+
+								'<li><a href="#">BioZkin</a></li>'+
 								'<li><a href="#">Testimonial</a></li>'+
 							'</ul>'+
 						'</div>'+
@@ -77,12 +77,12 @@ $( document ).ready(function() {
 				'</div>'+
 				'<div class="col-md-4">'+
 					'<button class="custom-button size-xl">Purchase Now</button>'+
-					'<img class="bioevolve-brand" src="img/bioevolve_logo.png" alt="Bioevolve Brand">'+
+					'<img class="bioevolve-brand" src="img/bioevolve_logo.png" alt="BioZkin Brand">'+
 				'</div>'+
 			'</div>'+
 		'</div>'+
 		'<div class="copyright">'+
-			'Copyright © 2013-2015 Bioevolve™. All Rights Reserved.'+
+			'Copyright © 2013-2015 BioZkin™. All Rights Reserved.'+
 		'</div>';
 
 });

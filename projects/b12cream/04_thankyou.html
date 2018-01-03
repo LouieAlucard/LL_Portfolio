@@ -1,7 +1,7 @@
 <%@ Page Language="VB" %>
 <!DOCTYPE html>
 <%@ Import Namespace = "System.Data.SqlClient" %>
-<!--#include file="/conn/conn.aspx"-->
+<!--#include file="/conn/conn.html"-->
 <script language="VB" runat="server">
 	Public TheFullName As String
 	Public TheInvoiceNumber As Integer
@@ -17,7 +17,7 @@
     Public TheQuantity(1) As String
 
 	Protected Overrides Sub OnError(ByVal e as System.EventArgs) 
-		Response.Redirect("http://www.b12cream.com/index.aspx")
+		Response.Redirect("http://www.b12cream.com/index.html")
 	End Sub
 
 
@@ -41,7 +41,7 @@
         Dim II As Integer
 		Dim theAVSResult As String = ""
         If Session("ClientID") < 1 OR Session("Invoice") < 1 Then
-            Response.Redirect("index.aspx")
+            Response.Redirect("index.html")
         End If
 		
 		conn.Open()
@@ -174,7 +174,7 @@
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
    
-   	<title>Thank you | Bioevolve B12 Plus+ Cream</title>
+   	<title>Thank you | BioZkin B12 Plus+ Cream</title>
 	<meta name="description" content="Thank you page that also contains the summary information of customer's order including purchased products. shipping and billing information ">
 
 	<!-- Bootstrap -->
@@ -189,7 +189,61 @@
 </head>
 
 <body>
-	<!--#include file="header.aspx"-->
+	<div class="grid col-12">
+	<nav class="navbar navbar-default nav-bioevolve" role="navigation">
+		<div class="container-fluid">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a href="index.html" class="navbar-brand">
+                    <img src="img/bioevolve_logo.png" alt="BioZkin Brand" id="navLogo">
+                </a>
+	        </div>
+            <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                <ul class="nav navbar-nav"><li><a href="index.html">B12</a></li>
+                    <li><a href="01_about.html">Brand</a></li>
+                    <li><a href="02_ship.html">Shipping</a></li>
+                    <li><a href="03_contact.html">Contact</a></li>
+                    <li><a href="05_wholesale.html">Wholesale</a></li>
+                    <li><a href="07_termsandconditions.html">Policy</a></li>
+                </ul>
+                <ul class="nav navbar-nav navbar-right">
+                	<li>							
+                		<a href="">Hello Customer</a>
+                		<ul class="dropdown">
+                			<li><a href="06_account.html">My Account</a></li>
+						    <li><a href="06_history.html">Order History</a></li>
+						    <li><a href="06_login.html?L=O">Log Out</a></li>
+						</ul>
+					</li>
+	            	<li><a href="/04_cart.html">Shopping Cart</a></li>
+	            </ul>
+	        </div>
+	    </div>
+	</nav>
+	<div class="free-shipping">
+		<img src="img/freeshipping-box-icon.png" alt="free shipping icon">
+		<p>
+			Free expedited shipping to North America on orders $99 or more. 
+			Free Xpresspost shipping Internationally on orders $199 or more.
+		</p>
+		<img src="img/freeshipping.png" alt="free shipping icon">
+	</div>
+</div>
+
+<script>
+$(function() {
+    if (location.pathname.split("/")[1] == "") {
+        $('nav a[href^="/index.html"]').addClass('active');
+    } else {
+        $('nav a[href^="/' + location.pathname.split("/")[1] + '"]').addClass('active');
+    }
+});
+</script>
 
 	<div class="grid module-frame" id="pageOrdered">
 		<div class="col-14of14 header">
@@ -401,7 +455,7 @@
 	</div>
 
 
-	<!--#include file="footer.aspx"-->
+	<!--#include file="footer.html"-->
 
 <script src="js/ios_doubleTap_disable.js"></script>
 </body>
