@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Louie's Portfolio</title>
+	<link rel="stylesheet" href="css/main.css">
+	<link rel="stylesheet" href="css/grid.css">
+
+	<link href='http://fonts.googleapis.com/css?family=Orbitron:400,500,700,900' rel='stylesheet' type='text/css'>
+	<link href='http://fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+	<link href='http://fonts.googleapis.com/css?family=Roboto:400,100,100italic,300,300italic,400italic,500,500italic,700,700italic,900,900italic' rel='stylesheet' type='text/css'>
+</head>
+
+<body>
+	<div id="bg"></div>
+	<div class="nav-top-upper"></div>
+	<div class="grid" id="topNav">
+		<div class="nav-top">
+			<nav>
+				<a href="index.html"><img src="img/logo.png" alt="Logo"></a>
+				<span>/</span>
+				<a class="nav-text" href="index.html">HOME</a>
+				<span>/</span>
+				<a class="nav-text" href="01_about.html">ABOUT</a>
+				<span>/</span>
+				<a class="nav-text" href="02_projects.html">PROJECTS</a>
+				<span>/</span>
+				<a class="nav-text" href="index.html#footer">CONTACT</a>
+			</nav>
+		</div>
+	</div>
+	<div class="nav-top-bottom"></div>
+
+
+	<div class="grid" id="content">
+		<div class="col-8of12">
+			<div class="col-2of8" id="tab-title">
+				<h2>PROJECT</h2>
+			</div>
+			<div class="col-2of8" id="phase">
+				<nav class="phase"> 
+					<a href="#section00"><h3>Overview</h3></a>
+					<a href="#section02"><h3>Code Demo</h3></a>
+				</nav>
+			</div>
+			
+			<div class="col-6of8 content-box" id="detail">
+				<div class="project-title">
+					<h1>Shopify Store Creation</h1>
+					<h2>Web Development</h2>
+				</div>
+				
+				<div class="col-1of6">
+					<div class="info-group">
+						<div class="info-title">
+							<h4>Website</h4>
+						</div>
+					</div>
+				</div>
+				<div class="col-5of6">
+					<div class="info-group">
+						<p><a href="https://www.biosenseclinic.com/" target="_blank">www.biosenseclinic.com</a></p>
+					</div>
+				</div>
+				
+				<div class="col-1of6">
+					<div class="info-group">
+						<div class="info-title">
+							<h4>Team</h4>
+						</div>
+					</div>
+				</div>
+				<div class="col-5of6">
+					<div class="info-group">
+						<p>1</p>
+					</div>
+				</div>
+
+				<div class="col-1of6">
+					<div class="info-group">
+						<div class="info-title">
+							<h4>Tools</h4>
+						</div>
+					</div>
+				</div>
+				<div class="col-5of6">
+					<div class="info-group">
+						<p>Shopify's Templating Language: Liquid, HTML, CSS, SASS, JavaScript</p>
+					</div>
+				</div>
+
+				<div class="col-1of1 project-section" id="section00">
+					<div class="project-subtitle">
+						<h3>Brief</h3>
+					</div>
+					<p>I was responsible to migrate online store to Shopify for Biosense Clinic Pharmacy. Until the store launch, it took me two months to get the store ready. After that, I kept enhancing store features and its UI/UX.</p>
+				</div>
+
+				<div class="col-1of1 project-section" id="section01">
+					<div class="project-subtitle">
+						<h3>Theme Customization</h3>
+					</div>
+					<p>The website layout was designed based on the given template through HTML, CSS, SASS. The original is <a href="https://supply-electronics.myshopify.com/" target="_blank">here</a></p>
+				</div>
+
+				<div class="col-1of1 project-section" id="section02">
+					<div class="project-subtitle">
+						<h3>Feature: display product sale price</h3>
+					</div>
+
+					<code>
+						<span>if (variant.compare_at_price &gt; variant.price) {</span>
+					      <span><span>$comparePercentage.html( Math.round( ((variant.compare_at_price - variant.price)/variant.compare_at_price)*100 ) ).show();</span></span>
+					      	<span><span>$comparePercentageOff.show();</span></span>
+					    <span>} else {</span>
+					      <span><span>$comparePercentage.hide();</span></span>
+					      <span><span>$comparePercentageOff.hide();</span></span>
+					   	<span>}</span>
+					</code>
+				</div>
+
+				<div class="col-1of1 project-section" id="section03">
+					<div class="project-subtitle">
+						<h3>Feature: search bar auto completion</h3>
+					</div>
+					
+					<code>
+						// If we have no results.<br />
+						if(data.results_count == 0) {<br />
+						// resultsList.html('&lt;li&gt;&lt;span class="title"&gt;No results.&lt;/span&gt;&lt;/li&gt;');<br />
+						// resultsList.fadeIn(200);<br />
+						resultsList.hide();<br />
+						} else {<br />
+						// If we have results.<br />
+						$.each(data.results, function(index, item) {<br />
+						var link = $('&lt;a&gt;&lt;/a&gt;').attr('href', item.url);<br />
+						link.append('&lt;span class="thumbnail"&gt;&lt;img src="' + item.thumbnail + '" /&gt;&lt;/span&gt;');<br />
+						link.append('&lt;span class="title"&gt;' + item.title + '&lt;/span&gt;');<br />
+						link.wrap('&lt;li&gt;&lt;/li&gt;');<br />
+						resultsList.append(link.parent());<br />
+						});<br />
+						// The Ajax request will return at the most 10 results.<br />
+						// If there are more than 10, let's link to the search results page.<br />
+						if(data.results_count &gt; 10) {<br />
+						resultsList.append('&lt;li&gt;&lt;span class="title"&gt;&lt;a href="' + searchURL + '"&gt;{{ settings.header_search_all_message }} (' + data.results_count + ')&lt;/a&gt;&lt;/span&gt;&lt;/li&gt;');<br />
+						}<br />
+						resultsList.fadeIn(200);<br />
+						}        <br />
+						});<br />
+						}<br />
+						});<br />
+						});<br />
+						// Clicking outside makes the results disappear.<br />
+						$('body').bind('click', function(){<br />
+						$('.search-results').hide();<br />
+						});<br />
+						});<br />
+						&lt;/script&gt;
+					</code>
+				</div>
+
+				
+			</div>
+		</div>
+	</div>
+
+	
+	<div class="grid">
+		<div class="col-12of12" id="footer">
+			<h6>Designed by Louie ye Liu</h6>
+		</div>
+	</div>
+
+</body>
+
+</html>

@@ -421,10 +421,16 @@ ul li {
   z-index: -1;   
 }
   
-.module-content#cats::after {
-  background-image: url("../img/project_cover_cats.jpg");
+.module-content#shopify::after {
+  background-image: url("../img/project_cover_shopify.jpg");
   background-size: 100% auto;
   background-position: 0 95%;
+}
+
+.module-content#numb::after {
+  background-image: url("../img/project_cover_numb.jpg");
+  background-size: 100% auto;
+  background-position: 0 50%;
 }
 
 .module-content#pirate::after {
@@ -626,6 +632,22 @@ div.project {
   margin: 0.8rem;
 }
 
+code {
+  display: block;
+  padding: 1em;
+  background: white;
+  font-size: 0.8em;
+  color: black;
+  border: 1px solid #14C6BD;
+}
+
+code span {
+  display: block;
+}
+
+code span>span {
+  padding-left: 2em;
+}
 
 
 

@@ -5,7 +5,7 @@
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
    
-   	<title>Shopping Cart | Bioevolve Numbing Cream</title>
+   	<title>Shopping Cart | BioZkin Numbing Cream</title>
 	<meta name="description" content="Manage your shopping cart">
 
 	<!-- Bootstrap -->
@@ -24,7 +24,69 @@
 
 <body>
 <div class="wrapper">
-	<!--#include file="header.aspx"-->
+	<div class="container" id="topNav">
+	<nav class="navbar navbar-default numbing">
+	  	<div class="container-fluid">
+		    <div class="navbar-header">
+		      	<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+		        	<span class="sr-only">Toggle navigation</span>
+		        	<span class="icon-bar"></span>
+		        	<span class="icon-bar"></span>
+		        	<span class="icon-bar"></span>
+		      	</button>
+		      	<a class="navbar-brand" href="index.html">
+		      		<img class="bioevolve-brand" src="img/bioevolve_logo.png" alt="BioZkin Brand">
+		      	</a>
+		      	<div class="nav-icons">
+		      		<a href="cart.html">
+		      			<img class="icon" src="img/icon_cart.png" id="iconCart" alt="shopping cart icon"> 
+		      		</a>
+	      		 	<!-- login button -->
+		      		<a href="login.html">
+		      			<img class="icon" src="img/icon_login.png" id="iconLogin" alt="shopping login icon"> 
+		      		</a>
+		      		
+	              	<!-- <li class="dropdown no-bullet" id="userBtn">
+            			<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+            				<img class="icon" src="img/icon_user.png" alt="user icon">
+            				<span class="text">Username</span> 
+            				<span class="caret"></span>
+            			</a>
+            			<ul class="dropdown-menu">
+            				<li><a href="user-account.html">my account</a></li>
+						    <li><a href="user-orders.html">order history</a></li>
+						    <li><a href="login.html?L=O">log out</a></li>
+            			</ul>
+         			</li> -->
+         		</div>
+		    </div>
+
+		    <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+		      	<ul class="nav navbar-nav">
+                    <li><a href="about.html">ABOUT</a></li>
+                    <li><a href="contact.html">CONTACT</a></li>
+                    <li class="brand-holder"><a href="index.html"><img class="bioevolve-brand" src="img/bioevolve_logo.png" alt="BioZkin Brand"></a></li>
+                    <li><a href="buynow.html"><em>PURCHASE</em></a></li>
+                    <li><a href="shipping.html">SHIPPING</a></li>
+            	</ul>
+		    </div>
+		</div>
+	</nav>
+
+	<div id="topInfo">
+		<div class="currency">
+			<span class="visible-md-inline visible-lg-inline">we accept</span>
+			<img class="hidden-xs" src="img/pay-01.jpg" alt="visa">
+			<img class="hidden-xs" src="img/pay-02.jpg" alt="master">
+			<img class="hidden-xs" src="img/pay-03.jpg" alt="paypal">
+		</div>
+		<div class="free-ship">
+			<img src="img/icon-freeship.png" alt="free shipping icon">
+			<span class="visible-md-inline visible-lg-inline">Free expedited shipping to North America on orders <strong>$99</strong> or more. Free Xpresspost shipping Internationally on orders <strong>$199</strong> or more.</span>
+			<span class="visible-sm-inline visible-xs-inline">Free expedited to NA > <strong>$99</strong>. Free Xpresspost Int&rsquo;l > <strong>$199</strong></span>
+		</div>
+	</div>
+</div>
 
 	<div class="bg-grey-2">
 		<div class="header-page">
@@ -43,7 +105,7 @@
 							<img id="cartProduct1" src="img/numb_15.png" alt="product" class="img-thumbnail" >
 							<div class="row">
 								<div class="col-xs-5">
-									<p class="margin-bottom-false"><strong>Bioevolve Numbing Cream 15g</strong></p>
+									<p class="margin-bottom-false"><strong>BioZkin Numbing Cream 15g</strong></p>
 								</div>
 								<div class="col-xs-7">
 									<h1>$15.00</h1>
@@ -53,7 +115,7 @@
 								<a class="custom-button green"><span class="glyphicon glyphicon-minus" aria-hidden="true"></span></a>
 								<h4>1</h4>
 								<a class="custom-button green"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span></a>
-								<a href="cart.aspx" class="green right"><span class="glyphicon glyphicon-remove-sign" aria-hidden="true"></span></a>
+								<a href="cart.html" class="green right"><span class="glyphicon glyphicon-remove-sign" aria-hidden="true"></span></a>
 							</div>
 						</div>
 
@@ -61,7 +123,7 @@
 							<img id="cartProduct2" src="img/numb_30.png" alt="product" class="img-thumbnail">
 							<div class="row">
 								<div class="col-xs-5">
-									<p class="margin-bottom-false"><strong>Bioevolve Numbing Cream 30g</strong></p>
+									<p class="margin-bottom-false"><strong>BioZkin Numbing Cream 30g</strong></p>
 								</div>
 								<div class="col-xs-7">
 									<h1>$15.00</h1>
@@ -79,7 +141,7 @@
 							<img id="cartProduct3" src="img/numb_60.png" alt="product" class="img-thumbnail">
 							<div class="row">
 								<div class="col-xs-5">
-									<p class="margin-bottom-false"><strong>Bioevolve Numbing Cream 60g</strong></p>
+									<p class="margin-bottom-false"><strong>BioZkin Numbing Cream 60g</strong></p>
 								</div>
 								<div class="col-xs-7">
 									<h1>$15.00</h1>
@@ -97,7 +159,7 @@
 							<img id="cartProduct4" src="img/numb_500.png" alt="product" class="img-thumbnail">
 							<div class="row">
 								<div class="col-xs-5">
-									<p class="margin-bottom-false"><strong>Bioevolve Numbing Cream 100g</strong></p>
+									<p class="margin-bottom-false"><strong>BioZkin Numbing Cream 100g</strong></p>
 								</div>
 								<div class="col-xs-7">
 									<h1>$15.00</h1>
@@ -125,22 +187,22 @@
 						</thead>
 						<tbody>
 							<tr class="highlight">
-								<td><a class="cart-jumper" title="cartProduct1">Bioevolve Numbing Cream 15g x 12<span class="glyphicon glyphicon-hand-right" aria-hidden="true"></span></a></td>
+								<td><a class="cart-jumper" title="cartProduct1">BioZkin Numbing Cream 15g x 12<span class="glyphicon glyphicon-hand-right" aria-hidden="true"></span></a></td>
 								<td>1</td>
 								<td>$223.00</td>
 							</tr>
 							<tr>
-								<td><a class="cart-jumper" title="cartProduct2">Bioevolve Numbing Cream 30g x 78<span class="glyphicon glyphicon-hand-right" aria-hidden="true"></span></a></td>
+								<td><a class="cart-jumper" title="cartProduct2">BioZkin Numbing Cream 30g x 78<span class="glyphicon glyphicon-hand-right" aria-hidden="true"></span></a></td>
 								<td>1</td>
 								<td>$2123.00</td>
 							</tr>
 							<tr>
-								<td><a class="cart-jumper" title="cartProduct3">Bioevolve Numbing Cream 60g x 22<span class="glyphicon glyphicon-hand-right" aria-hidden="true"></span></a></td>
+								<td><a class="cart-jumper" title="cartProduct3">BioZkin Numbing Cream 60g x 22<span class="glyphicon glyphicon-hand-right" aria-hidden="true"></span></a></td>
 								<td>1</td>
 								<td>$239.00</td>
 							</tr>
 							<tr>
-								<td><a class="cart-jumper" title="cartProduct4">Bioevolve Numbing Cream 100g x 12<span class="glyphicon glyphicon-hand-right" aria-hidden="true"></span></a></td>
+								<td><a class="cart-jumper" title="cartProduct4">BioZkin Numbing Cream 100g x 12<span class="glyphicon glyphicon-hand-right" aria-hidden="true"></span></a></td>
 								<td>1</td>
 								<td>$2.00</td>
 							</tr>
@@ -160,7 +222,7 @@
 					</form>
 					<div class="container-fluid">
 						<div class="row">
-							<a class="btn btn-default btn-lg right custom" href="checkout.aspx">CheckOut</a>
+							<a class="btn btn-default btn-lg right custom" href="checkout.html">CheckOut</a>
 						</div>
 					</div>
 				</div>
@@ -169,10 +231,10 @@
 	</div>
 	
 	<div class="header-page bottom">
-		<h2>BIOEVOLVE NUMBING CREAM</h2>
+		<h2>BIOZKIN NUMBING CREAM</h2>
 	</div>
 
-	<!--#include file="footer.aspx"-->
+	<!--#include file="footer.html"-->
 </div>
 
 
