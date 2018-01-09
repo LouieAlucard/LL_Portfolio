@@ -128,8 +128,8 @@
 					<code>
 						// If we have no results.<br />
 						if(data.results_count == 0) {<br />
-						// resultsList.html('&lt;li&gt;&lt;span class="title"&gt;No results.&lt;/span&gt;&lt;/li&gt;');<br />
-						// resultsList.fadeIn(200);<br />
+						 resultsList.html('&lt;li&gt;&lt;span class="title"&gt;No results.&lt;/span&gt;&lt;/li&gt;');<br />
+						 resultsList.fadeIn(200);<br />
 						resultsList.hide();<br />
 						} else {<br />
 						// If we have results.<br />
@@ -140,8 +140,7 @@
 						link.wrap('&lt;li&gt;&lt;/li&gt;');<br />
 						resultsList.append(link.parent());<br />
 						});<br />
-						// The Ajax request will return at the most 10 results.<br />
-						// If there are more than 10, let's link to the search results page.<br />
+						// If there are more than 10, link to the search results page.<br />
 						if(data.results_count &gt; 10) {<br />
 						resultsList.append('&lt;li&gt;&lt;span class="title"&gt;&lt;a href="' + searchURL + '"&gt;{{ settings.header_search_all_message }} (' + data.results_count + ')&lt;/a&gt;&lt;/span&gt;&lt;/li&gt;');<br />
 						}<br />
